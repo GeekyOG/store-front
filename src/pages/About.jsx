@@ -7,7 +7,7 @@ const VALUES = [
     color: "#07b6b0",
     bg: "#07b6b015",
     title: "Trust & Transparency",
-    desc: "Every product listing is verified and every price is exactly what you pay — no hidden fees, ever.",
+    desc: "Every device is thoroughly verified for authenticity. We sell 100% genuine gadgets with honest pricing—no hidden fees, ever.",
   },
   {
     icon: Zap,
@@ -21,7 +21,7 @@ const VALUES = [
     color: "#8b5cf6",
     bg: "#8b5cf615",
     title: "Community First",
-    desc: "We started as a local store and still treat every customer like a neighbour, not a number.",
+    desc: "We're a trusted Nigerian gadget store committed to treating every customer like family.",
   },
   {
     icon: HeartHandshake,

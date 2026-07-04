@@ -12,6 +12,7 @@ import {
   Tag,
   Phone,
   Store,
+  X,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -31,6 +32,7 @@ function ProductCarousel({ products, delay = 2000, reverse = false }) {
     delay,
     disableOnInteraction: false,
     reverseDirection: reverse,
+    pauseOnMouseEnter: true,
   });
   return (
     <Swiper
@@ -58,7 +60,11 @@ function ProductCarousel({ products, delay = 2000, reverse = false }) {
 
 // ── Promo banner slider ─────────────────────────────────────────────────────────
 function BannerSlider({ banners }) {
-  const autoplayRef = useRef({ delay: 4000, disableOnInteraction: false });
+  const autoplayRef = useRef({
+    delay: 4000,
+    disableOnInteraction: false,
+    pauseOnMouseEnter: true,
+  });
   return (
     <Swiper
       modules={[Autoplay, Navigation, Pagination]}
@@ -88,6 +94,7 @@ function CategorySidebar({ categories }) {
     <aside className="hidden lg:block w-56 shrink-0">
       <div className="h-full min-h-[320px] rounded-2xl border border-neutral-200 bg-white overflow-y-auto">
         <ul className="divide-y divide-neutral-50">
+          <h1 className="ml-4 mt-4 mb-2 text-lg font-semibold text-neutral-800">Categories</h1>
           {categories?.slice(0, 8).map((cat) => (
             <li key={cat.id}>
               <Link
@@ -108,7 +115,7 @@ function CategorySidebar({ categories }) {
 // ── Call-to-action sidebar ────────────────────────────────────────────────────
 function CtaSidebar() {
   return (
-    <aside className="hidden xl:flex flex-col gap-2 w-56 shrink-0">
+    <aside className="hidden lgx:flex flex-col gap-2 w-56 shrink-0">
       <div className="rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-50">
         <a href="tel:+2347038784788" className="flex items-center gap-3 px-4 py-3.5 group">
           <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
@@ -197,6 +204,81 @@ function CardSkeleton() {
   );
 }
 
+// ── Feature badges ───────────────────────────────────────────────────────────────
+const FEATURE_BADGES = [
+  {
+    Icon: Truck,
+    bg: "#07b6b018",
+    color: "#07b6b0",
+    title: "Fast Delivery",
+    desc: "24hrs within Delta, 24-72hrs nationwide",
+    details:
+      "Orders within Delta State are delivered within 24 hours. Everywhere else in Nigeria, delivery takes between 24 and 72 hours, depending on your location. We partner with trusted couriers to make sure your order arrives safely and on time.",
+  },
+  {
+    Icon: ShieldCheck,
+    bg: "#3b82f618",
+    color: "#3b82f6",
+    title: "Secure Payment",
+    desc: "100% secure transactions",
+    details:
+      "All payments are processed through encrypted, PCI-compliant channels. Your card and personal details are never stored on our servers.",
+  },
+  {
+    Icon: RefreshCw,
+    bg: "#8b5cf618",
+    color: "#8b5cf6",
+    title: "Easy Returns",
+    desc: "Hassle-free return policy",
+    details:
+      "Not satisfied with your purchase? Reach out within our return window and we'll help you exchange or refund it — no complicated forms, no hidden fees.",
+  },
+  {
+    Icon: Headphones,
+    bg: "#f59e0b18",
+    color: "#f59e0b",
+    title: "24/7 Support",
+    desc: "Always here to help",
+    details:
+      "Our support team is available around the clock via phone, email, or the contact form — whether you have a question before you buy or need help after delivery.",
+  },
+];
+
+function FeatureInfoModal({ feature, onClose }) {
+  const { Icon, bg, color, title, details } = feature;
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        <div className="px-7 pt-9 pb-8 text-center">
+          <div
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
+            style={{ background: bg }}
+          >
+            <Icon size={26} style={{ color }} />
+          </div>
+
+          <h2 className="text-lg font-extrabold text-neutral-800">{title}</h2>
+          <p className="mt-2 text-sm text-neutral-500 leading-relaxed">{details}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Section Header ─────────────────────────────────────────────────────────────
 function SectionHeader({ icon: Icon, iconBg, iconColor, title, linkTo }) {
   return (
@@ -225,6 +307,7 @@ function SectionHeader({ icon: Icon, iconBg, iconColor, title, linkTo }) {
 // ── Main ───────────────────────────────────────────────────────────────────────
 export default function Home() {
   const [page, setPage] = useState(1);
+  const [activeFeature, setActiveFeature] = useState(null);
 
   const { data: cms } = useGetPublicCmsQuery();
   const { data: categoriesData } = useGetPublicCategoriesQuery();
@@ -286,56 +369,36 @@ export default function Home() {
       {/* ── Feature Badges ────────────────────────────────────────────────────── */}
       <div className="bg-white border-b border-neutral-200 shadow-sm">
         <div className="mx-auto max-w-7xl px-4 py-4 grid grid-cols-2 sm:grid-cols-4 divide-x divide-neutral-100">
-          {[
-            {
-              Icon: Truck,
-              bg: "#07b6b018",
-              color: "#07b6b0",
-              title: "Fast Delivery",
-              desc: "Quick & reliable shipping",
-            },
-            {
-              Icon: ShieldCheck,
-              bg: "#3b82f618",
-              color: "#3b82f6",
-              title: "Secure Payment",
-              desc: "100% secure transactions",
-            },
-            {
-              Icon: RefreshCw,
-              bg: "#8b5cf618",
-              color: "#8b5cf6",
-              title: "Easy Returns",
-              desc: "Hassle-free return policy",
-            },
-            {
-              Icon: Headphones,
-              bg: "#f59e0b18",
-              color: "#f59e0b",
-              title: "24/7 Support",
-              desc: "Always here to help",
-            },
-          ].map(({ Icon, bg, color, title, desc }) => (
-            <div
-              key={title}
-              className="flex items-center gap-3 px-4 first:pl-0 last:pr-0 py-1"
-            >
-              <div
-                className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: bg }}
+          {FEATURE_BADGES.map((feature) => {
+            const { Icon, bg, color, title, desc } = feature;
+            return (
+              <button
+                key={title}
+                type="button"
+                onClick={() => setActiveFeature(feature)}
+                className="flex items-center gap-3 px-4 first:pl-0 last:pr-0 py-1 text-left hover:opacity-80 transition-opacity"
               >
-                <Icon size={18} style={{ color }} />
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold text-neutral-700 truncate">
-                  {title}
-                </p>
-                <p className="text-[10px] text-neutral-400 truncate">{desc}</p>
-              </div>
-            </div>
-          ))}
+                <div
+                  className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: bg }}
+                >
+                  <Icon size={18} style={{ color }} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-neutral-700 truncate">
+                    {title}
+                  </p>
+                  <p className="text-[10px] text-neutral-400 truncate">{desc}</p>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
+
+      {activeFeature && (
+        <FeatureInfoModal feature={activeFeature} onClose={() => setActiveFeature(null)} />
+      )}
 
       {/* ── Swap CTA ──────────────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 mt-8">

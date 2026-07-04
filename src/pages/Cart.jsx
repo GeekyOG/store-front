@@ -73,28 +73,24 @@ function CartItem({ item }) {
         {/* Actions row */}
         <div className="flex items-center gap-3 mt-3">
           {/* Qty controls */}
-          {!item.is_serialized ? (
-            <div className="flex items-center border border-neutral-200 rounded-lg overflow-hidden">
-              <button
-                onClick={() => setQty(item.quantity - 1)}
-                className="px-2.5 py-1 text-neutral-500 hover:bg-neutral-50 transition-colors"
-              >
-                <Minus size={12} />
-              </button>
-              <span className="px-3 py-1 text-sm font-semibold text-neutral-800 min-w-[2rem] text-center">
-                {item.quantity}
-              </span>
-              <button
-                onClick={() => setQty(item.quantity + 1)}
-                disabled={item.quantity >= item.maxQty}
-                className="px-2.5 py-1 text-neutral-500 hover:bg-neutral-50 transition-colors disabled:opacity-40"
-              >
-                <Plus size={12} />
-              </button>
-            </div>
-          ) : (
-            <span className="text-xs text-neutral-400 font-medium">Qty: 1</span>
-          )}
+          <div className="flex items-center border border-neutral-200 rounded-lg overflow-hidden">
+            <button
+              onClick={() => setQty(item.quantity - 1)}
+              className="px-2.5 py-1 text-neutral-500 hover:bg-neutral-50 transition-colors"
+            >
+              <Minus size={12} />
+            </button>
+            <span className="px-3 py-1 text-sm font-semibold text-neutral-800 min-w-[2rem] text-center">
+              {item.quantity}
+            </span>
+            <button
+              onClick={() => setQty(item.quantity + 1)}
+              disabled={item.quantity >= item.maxQty}
+              className="px-2.5 py-1 text-neutral-500 hover:bg-neutral-50 transition-colors disabled:opacity-40"
+            >
+              <Plus size={12} />
+            </button>
+          </div>
 
           <button
             onClick={moveToWishlist}

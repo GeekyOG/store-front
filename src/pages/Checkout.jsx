@@ -2,14 +2,14 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronRight, Package, CreditCard, Truck,
-  MapPin, Lock, AlertCircle, Tag, X, Check,
+  MapPin, Lock, AlertCircle, Tag, X, Check, Minus, Plus, Gift,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { selectCartItems, selectCartTotal, clearCart } from "../store/cartSlice";
+import { selectCartItems, selectCartTotal, clearCart, removeFromCart, updateQuantity } from "../store/cartSlice";
 import { selectCurrentCustomer } from "../store/authSlice";
 import {
   usePlaceOrderMutation, useValidateDiscountCodeMutation, useGetShippingFeesQuery,
-  useInitializePaystackPaymentMutation, useGetMeQuery,
+  useInitializePaystackPaymentMutation, useGetMeQuery, storefrontApi,
 } from "../api/storefrontApi";
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
 
@@ -59,6 +59,10 @@ export default function Checkout() {
   const [promoError, setPromoError] = useState("");
   const [appliedPromo, setAppliedPromo] = useState(null); // { code, discount_amount }
 
+  const referralBalance = Number(customer?.referral_balance ?? 0);
+  const [useReferralBalance, setUseReferralBalance] = useState(false);
+  const [referralAmountInput, setReferralAmountInput] = useState("");
+
   const [form, setForm] = useState({
     first_name: customer?.first_name   ?? "",
     last_name:  customer?.last_name    ?? "",
@@ -72,6 +76,7 @@ export default function Checkout() {
   const [payment, setPayment] = useState("paystack");
   const [errors,  setErrors]  = useState({});
   const [serverError, setServerError] = useState("");
+  const [checkingStock, setCheckingStock] = useState(false);
 
   // The initial useState above only had the (possibly stale) Redux customer
   // to work with. Reconcile once the freshest profile arrives — but only
@@ -94,6 +99,14 @@ export default function Checkout() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  const changeItemQty = (item, quantity) => {
+    if (quantity <= 0) {
+      dispatch(removeFromCart({ id: item.id, optKey: item.optKey }));
+    } else {
+      dispatch(updateQuantity({ id: item.id, optKey: item.optKey, quantity }));
+    }
+  };
+
   // Guest order lookups need the shipping email to prove ownership (see
   // getOrderByNumber); logged-in customers are matched by their account instead.
   const confirmationPath = (orderNumber) =>
@@ -102,8 +115,20 @@ export default function Checkout() {
       : `/order-confirmation/${orderNumber}?email=${encodeURIComponent(form.email.trim())}`;
 
   const discountAmount = appliedPromo?.discount_amount ?? 0;
+  const maxReferralUsable = Math.max(Math.min(referralBalance, subtotal - discountAmount), 0);
+  const referralAmount = useReferralBalance
+    ? Math.max(0, Math.min(Number(referralAmountInput) || 0, maxReferralUsable))
+    : 0;
   const shippingFee = shippingFees?.find((f) => f.state === form.state)?.fee ?? 0;
-  const total = Math.max(subtotal - discountAmount + shippingFee, 0);
+  const total = Math.max(subtotal - discountAmount - referralAmount + shippingFee, 0);
+
+  const handleToggleReferralBalance = () => {
+    setUseReferralBalance((prev) => {
+      const next = !prev;
+      if (next) setReferralAmountInput(String(maxReferralUsable));
+      return next;
+    });
+  };
 
   const handleApplyPromo = async () => {
     const code = promoInput.trim();
@@ -149,10 +174,59 @@ export default function Checkout() {
     return Object.keys(e).length === 0;
   };
 
+  // Cart quantities/caps are snapshotted at add-to-cart time and can go stale
+  // (stock sold out from under the customer while the cart sat idle). Re-fetch
+  // live stock for every line item right before submitting so the order can
+  // never request more than what's actually available in store.
+  const reconcileStockWithCart = async () => {
+    const uniqueIds = [...new Set(items.map((i) => i.id))];
+    const productsById = new Map();
+    await Promise.all(
+      uniqueIds.map(async (id) => {
+        try {
+          const product = await dispatch(
+            storefrontApi.endpoints.getPublicProduct.initiate(id, { forceRefetch: true }),
+          ).unwrap();
+          productsById.set(id, product);
+        } catch {
+          // Backend will still reject an over-order as a final safety net.
+        }
+      }),
+    );
+
+    const changes = [];
+    for (const item of items) {
+      const product = productsById.get(item.id);
+      if (!product) continue;
+      const available = product.is_serialized
+        ? (product.StorefrontSerialNumbers?.length ?? 0)
+        : (product.online_quantity ?? 0);
+      if (item.quantity > available) {
+        if (available <= 0) {
+          dispatch(removeFromCart({ id: item.id, optKey: item.optKey }));
+          changes.push(`${item.name} sold out and was removed from your cart.`);
+        } else {
+          dispatch(updateQuantity({ id: item.id, optKey: item.optKey, quantity: available }));
+          changes.push(`${item.name} quantity was reduced to ${available} (only ${available} left in stock).`);
+        }
+      }
+    }
+    return changes;
+  };
+
   const handleSubmit = async (ev) => {
     ev.preventDefault();
     if (!validate()) return;
     setServerError("");
+
+    setCheckingStock(true);
+    const stockChanges = await reconcileStockWithCart();
+    setCheckingStock(false);
+    if (stockChanges.length > 0) {
+      setServerError(`${stockChanges.join(" ")} Please review your cart before placing the order.`);
+      return;
+    }
+
     try {
       const payload = {
         items: items.map((i) => ({
@@ -171,6 +245,7 @@ export default function Checkout() {
         payment_method: payment,
         notes: form.notes.trim() || undefined,
         coupon_code: appliedPromo?.code || undefined,
+        referral_amount: referralAmount > 0 ? referralAmount : undefined,
       };
       const res = await placeOrder(payload).unwrap();
       dispatch(clearCart());
@@ -354,7 +429,26 @@ export default function Checkout() {
                       {Object.entries(item.selectedOptions ?? {}).map(([k, v]) => (
                         <p key={k} className="text-[10px] text-neutral-400">{k}: {v}</p>
                       ))}
-                      <p className="text-xs text-neutral-500 mt-0.5">Qty: {item.quantity}</p>
+                      <div className="flex items-center border border-neutral-200 rounded-lg overflow-hidden mt-1 w-fit">
+                        <button
+                          type="button"
+                          onClick={() => changeItemQty(item, item.quantity - 1)}
+                          className="px-1.5 py-0.5 text-neutral-500 hover:bg-neutral-50 transition-colors"
+                        >
+                          <Minus size={10} />
+                        </button>
+                        <span className="px-2 py-0.5 text-xs font-semibold text-neutral-800 min-w-[1.5rem] text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => changeItemQty(item, item.quantity + 1)}
+                          disabled={item.quantity >= item.maxQty}
+                          className="px-1.5 py-0.5 text-neutral-500 hover:bg-neutral-50 transition-colors disabled:opacity-40"
+                        >
+                          <Plus size={10} />
+                        </button>
+                      </div>
                     </div>
                     <p className="text-sm font-bold text-neutral-800 shrink-0">
                       ₦{(item.price * item.quantity).toLocaleString()}
@@ -405,6 +499,40 @@ export default function Checkout() {
                 {promoError && <p className="mt-1.5 text-xs text-red-500">{promoError}</p>}
               </div>
 
+              {/* Referral balance */}
+              {referralBalance > 0 && (
+                <div className="border-t border-neutral-100 mt-4 pt-4">
+                  <label className="flex items-center justify-between gap-2 cursor-pointer">
+                    <span className="flex items-center gap-2 text-xs font-semibold text-neutral-700">
+                      <Gift size={13} className="text-primary-500" />
+                      Use referral balance (₦{referralBalance.toLocaleString()} available)
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={useReferralBalance}
+                      onChange={handleToggleReferralBalance}
+                      className="accent-primary-600 h-4 w-4"
+                    />
+                  </label>
+                  {useReferralBalance && (
+                    <div className="mt-2 relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400">₦</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={maxReferralUsable}
+                        value={referralAmountInput}
+                        onChange={(e) => setReferralAmountInput(e.target.value)}
+                        className="w-full rounded-xl border border-neutral-200 pl-6 pr-3 py-2 text-xs outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-50 transition-all"
+                      />
+                      <p className="mt-1 text-[10px] text-neutral-400">
+                        Up to ₦{maxReferralUsable.toLocaleString()} can be applied to this order.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="mt-4 pt-4 border-t border-neutral-100 space-y-2 text-sm">
                 <div className="flex justify-between text-neutral-600">
                   <span>Subtotal</span>
@@ -414,6 +542,12 @@ export default function Checkout() {
                   <div className="flex justify-between text-emerald-600 font-medium">
                     <span>Discount</span>
                     <span>-₦{discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
+                {referralAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-medium">
+                    <span>Referral balance used</span>
+                    <span>-₦{referralAmount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-neutral-600">
@@ -434,15 +568,21 @@ export default function Checkout() {
 
               <button
                 type="submit"
-                disabled={isLoading || initializingPayment}
+                disabled={isLoading || initializingPayment || checkingStock}
                 className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-primary-600 py-3 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-60 transition-colors shadow-sm"
               >
-                {isLoading || initializingPayment ? (
+                {isLoading || initializingPayment || checkingStock ? (
                   <span className="h-4 w-4 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 ) : (
                   <Lock size={14} />
                 )}
-                {isLoading ? "Placing Order…" : initializingPayment ? "Redirecting to Paystack…" : "Place Order"}
+                {checkingStock
+                  ? "Checking availability…"
+                  : isLoading
+                    ? "Placing Order…"
+                    : initializingPayment
+                      ? "Redirecting to Paystack…"
+                      : "Place Order"}
               </button>
 
               <p className="mt-3 text-[10px] text-neutral-400 text-center">

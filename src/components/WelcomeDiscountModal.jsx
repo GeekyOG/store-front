@@ -32,7 +32,7 @@ export default function WelcomeDiscountModal({ onClose }) {
           </div>
 
           <h2 className="text-lg font-extrabold text-neutral-800">
-            Get 5% off your first order
+            Get ₦10,000 off your first order
           </h2>
           <p className="mt-1.5 text-sm text-neutral-500">
             Create a free account and we'll email you a one-time discount code.

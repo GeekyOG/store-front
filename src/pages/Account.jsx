@@ -19,6 +19,9 @@ import {
   Gift,
   Copy,
   Users,
+  Star,
+  X,
+  Tag,
 } from "lucide-react";
 import {
   useGetMeQuery,
@@ -26,6 +29,8 @@ import {
   useUpdatePasswordMutation,
   useGetMyOrdersQuery,
   useGetReferralSummaryQuery,
+  useGetMyDiscountCodesQuery,
+  useAddReviewMutation,
 } from "../api/storefrontApi";
 import { selectCurrentCustomer, logout } from "../store/authSlice";
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
@@ -145,9 +150,84 @@ function OverviewTab({ customer, orders }) {
   );
 }
 
+// ── Review modal (used from the Orders tab) ───────────────────────────────────
+
+function ReviewModal({ target, onClose, onSubmitted }) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+  const [error, setError] = useState("");
+  const [addReview, { isLoading }] = useAddReviewMutation();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      await addReview({ productId: target.productId, rating, comment }).unwrap();
+      onSubmitted();
+    } catch (err) {
+      setError(err?.data?.message ?? "Failed to submit review.");
+    }
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl bg-white p-5 space-y-4"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-bold text-neutral-800 line-clamp-1">
+            Review: {target.name}
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="shrink-0 text-neutral-400 hover:text-neutral-600 transition-colors"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="flex items-center gap-1">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <button type="button" key={i} onClick={() => setRating(i + 1)}>
+                <Star
+                  size={24}
+                  className={i < rating ? "text-amber-400 fill-amber-400" : "text-neutral-200 fill-neutral-200"}
+                />
+              </button>
+            ))}
+          </div>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows={3}
+            placeholder="Share your thoughts about this product… (optional)"
+            className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-50 transition-all resize-none"
+          />
+          {error && <p className="text-xs text-red-500">{error}</p>}
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full rounded-xl bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60 transition-colors"
+          >
+            {isLoading ? "Submitting…" : "Submit Review"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ── Tab: Orders ───────────────────────────────────────────────────────────────
 
 function OrdersTab({ orders, isLoading }) {
+  const [reviewTarget, setReviewTarget] = useState(null);
+  const [reviewedIds, setReviewedIds] = useState(() => new Set());
+
   if (isLoading) {
     return (
       <div className="space-y-3">
@@ -187,39 +267,80 @@ function OrdersTab({ orders, isLoading }) {
       </div>
       <div className="divide-y divide-neutral-100">
         {orders.map((order) => {
-          const itemCount = order.StorefrontOrderItems?.length ?? 0;
+          const items = order.StorefrontOrderItems ?? [];
+          const itemCount = items.length;
           return (
-            <Link
-              key={order.id}
-              to={`/order-confirmation/${order.order_number}`}
-              className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-center gap-2 sm:gap-4 px-4 py-4 hover:bg-neutral-50 transition-colors group"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-9 w-9 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
-                  <Package size={15} className="text-primary-500" />
+            <div key={order.id}>
+              <Link
+                to={`/order-confirmation/${order.order_number}`}
+                className="flex flex-col sm:grid sm:grid-cols-[1fr_auto_auto_auto_auto] sm:items-center gap-2 sm:gap-4 px-4 py-4 hover:bg-neutral-50 transition-colors group"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="h-9 w-9 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
+                    <Package size={15} className="text-primary-500" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-neutral-800 font-mono truncate">
+                      {order.order_number}
+                    </p>
+                    <p className="text-[10px] text-neutral-400 sm:hidden">
+                      {formatDate(order.createdAt)}
+                    </p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-neutral-800 font-mono truncate">
-                    {order.order_number}
-                  </p>
-                  <p className="text-[10px] text-neutral-400 sm:hidden">
-                    {formatDate(order.createdAt)}
-                  </p>
+                <p className="hidden sm:block text-xs text-neutral-500 whitespace-nowrap">{formatDate(order.createdAt)}</p>
+                <p className="hidden sm:block text-xs text-neutral-500 text-center">
+                  {itemCount} item{itemCount !== 1 ? "s" : ""}
+                </p>
+                <StatusBadge status={order.status} />
+                <div className="flex items-center justify-between sm:justify-end gap-2">
+                  <p className="text-sm font-bold text-neutral-700">₦{Number(order.total).toLocaleString()}</p>
+                  <ChevronRight size={13} className="text-neutral-300 group-hover:text-primary-500 transition-colors" />
                 </div>
-              </div>
-              <p className="hidden sm:block text-xs text-neutral-500 whitespace-nowrap">{formatDate(order.createdAt)}</p>
-              <p className="hidden sm:block text-xs text-neutral-500 text-center">
-                {itemCount} item{itemCount !== 1 ? "s" : ""}
-              </p>
-              <StatusBadge status={order.status} />
-              <div className="flex items-center justify-between sm:justify-end gap-2">
-                <p className="text-sm font-bold text-neutral-700">₦{Number(order.total).toLocaleString()}</p>
-                <ChevronRight size={13} className="text-neutral-300 group-hover:text-primary-500 transition-colors" />
-              </div>
-            </Link>
+              </Link>
+
+              {/* Only delivered orders can be reviewed */}
+              {order.status === "delivered" && itemCount > 0 && (
+                <div className="flex flex-wrap gap-2 px-4 pb-4">
+                  {items.map((item) => {
+                    const reviewed = reviewedIds.has(item.storefrontProductId);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        disabled={reviewed}
+                        onClick={() => setReviewTarget({
+                          productId: item.storefrontProductId,
+                          name: item.product_name,
+                        })}
+                        className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                          reviewed
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-600 cursor-default"
+                            : "border-neutral-200 text-neutral-600 hover:border-primary-300 hover:text-primary-600"
+                        }`}
+                      >
+                        <Star size={12} className={reviewed ? "fill-emerald-500 text-emerald-500" : ""} />
+                        {reviewed ? "Reviewed" : `Review "${item.product_name}"`}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
+
+      {reviewTarget && (
+        <ReviewModal
+          target={reviewTarget}
+          onClose={() => setReviewTarget(null)}
+          onSubmitted={() => {
+            setReviewedIds((prev) => new Set(prev).add(reviewTarget.productId));
+            setReviewTarget(null);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -481,8 +602,7 @@ function ReferralsTab() {
     );
   }
 
-  const availableCount =
-    data?.reward_codes?.filter((c) => c.active && c.used_count < c.max_uses).length ?? 0;
+  const referralBalance = data?.referral_balance ?? 0;
 
   return (
     <div className="space-y-6">
@@ -490,10 +610,12 @@ function ReferralsTab() {
       <div className="bg-gradient-to-br from-primary-600 to-primary-500 rounded-2xl p-5 text-white">
         <div className="flex items-center gap-2 mb-1">
           <Gift size={16} />
-          <p className="font-bold text-sm">Refer a friend, earn 5%</p>
+          <p className="font-bold text-sm">Refer a friend, earn ₦5,000</p>
         </div>
         <p className="text-primary-100 text-xs leading-relaxed">
-          Share your link. When someone you referred spends over ₦50,000, you get a 5% discount code.
+          Share your link. When someone you referred makes their first purchase of over ₦50,000, you get
+          ₦5,000 added to your referral balance — accumulate it across every friend you refer, and spend it
+          on any order.
         </p>
         <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2.5">
           <span className="flex-1 text-sm font-mono font-semibold truncate">{referralLink}</span>
@@ -514,47 +636,44 @@ function ReferralsTab() {
           <p className="text-xs text-neutral-400 mt-0.5 font-medium">Friends Referred</p>
         </div>
         <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
-          <p className="text-2xl font-bold text-emerald-600">{availableCount}</p>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Rewards Available</p>
+          <p className="text-2xl font-bold text-emerald-600">₦{referralBalance.toLocaleString()}</p>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Referral Balance</p>
         </div>
       </div>
 
-      {/* Reward codes */}
+      {/* Reward history */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-neutral-100">
-          <p className="text-sm font-semibold text-neutral-700">Your Reward Codes</p>
+          <p className="text-sm font-semibold text-neutral-700">Reward History</p>
         </div>
-        {!data?.reward_codes?.length ? (
+        {!data?.rewards?.length ? (
           <div className="py-10 text-center">
             <Gift size={22} className="text-neutral-200 mx-auto mb-2" />
             <p className="text-sm text-neutral-400">No rewards earned yet.</p>
           </div>
         ) : (
           <div className="divide-y divide-neutral-100">
-            {data.reward_codes.map((c) => {
-              const redeemed = c.used_count >= c.max_uses;
-              return (
-                <div key={c.code} className="flex items-center justify-between px-4 py-3">
-                  <div>
-                    <p className="text-sm font-bold font-mono text-neutral-800">{c.code}</p>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
-                      {c.value}% off
-                      {c.expires_at && ` · expires ${formatDate(c.expires_at)}`}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs font-semibold rounded-full px-2.5 py-1 ${
-                      redeemed ? "bg-neutral-100 text-neutral-400" : "bg-emerald-100 text-emerald-700"
-                    }`}
-                  >
-                    {redeemed ? "Redeemed" : "Available"}
-                  </span>
+            {data.rewards.map((r, i) => (
+              <div key={i} className="flex items-center justify-between px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold text-neutral-800">+₦{r.amount.toLocaleString()}</p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    {r.referred_name ? `${r.referred_name}'s first purchase` : "Referral reward"}
+                    {" · "}{formatDate(r.createdAt)}
+                  </p>
                 </div>
-              );
-            })}
+                <span className="text-xs font-semibold rounded-full px-2.5 py-1 bg-emerald-100 text-emerald-700">
+                  Credited
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
+
+      <p className="text-xs text-neutral-400 text-center">
+        Apply your referral balance to any order — in full or in part — at checkout.
+      </p>
 
       {/* Referred friends */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
@@ -581,11 +700,103 @@ function ReferralsTab() {
   );
 }
 
+// ── Tab: Discounts ────────────────────────────────────────────────────────────
+
+function discountStatus(code) {
+  if (!code.active) return { label: "Inactive", color: "bg-neutral-100 text-neutral-500" };
+  if (code.expires_at && new Date(code.expires_at) < new Date())
+    return { label: "Expired", color: "bg-red-100 text-red-600" };
+  if (code.starts_at && new Date(code.starts_at) > new Date())
+    return { label: "Scheduled", color: "bg-amber-100 text-amber-700" };
+  if (code.max_uses != null && code.used_count >= code.max_uses)
+    return { label: "Used", color: "bg-neutral-100 text-neutral-500" };
+  return { label: "Active", color: "bg-emerald-100 text-emerald-700" };
+}
+
+function DiscountsTab() {
+  const { data, isLoading } = useGetMyDiscountCodesQuery();
+  const [copiedCode, setCopiedCode] = useState(null);
+
+  const copyCode = async (code) => {
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopiedCode(code);
+      setTimeout(() => setCopiedCode(null), 2000);
+    } catch {
+      // Clipboard access can fail (e.g. insecure context) — nothing to recover here.
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2].map((i) => (
+          <div key={i} className="h-20 rounded-2xl bg-neutral-100 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!data?.length) {
+    return (
+      <div className="bg-white rounded-2xl border border-neutral-200 py-16 text-center">
+        <div className="h-14 w-14 rounded-full bg-primary-50 flex items-center justify-center mx-auto mb-3">
+          <Tag size={24} className="text-primary-300" />
+        </div>
+        <p className="text-neutral-500 font-medium">No discounts yet</p>
+        <p className="text-sm text-neutral-400 mt-1">
+          Discount codes gifted to you will show up here.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+      <div className="divide-y divide-neutral-100">
+        {data.map((code) => {
+          const status = discountStatus(code);
+          const amount = code.type === "percentage" ? `${code.value}%` : `₦${Number(code.value).toLocaleString()}`;
+          return (
+            <div key={code.code} className="flex items-center justify-between gap-3 px-4 py-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-9 w-9 rounded-xl bg-primary-50 flex items-center justify-center shrink-0">
+                  <Tag size={15} className="text-primary-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-neutral-800 font-mono truncate">{code.code}</p>
+                  <p className="text-[11px] text-neutral-400 mt-0.5 truncate">
+                    {code.description || `${amount} off`}
+                    {code.expires_at && ` · Expires ${formatDate(code.expires_at)}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`text-xs font-semibold rounded-full px-2.5 py-1 ${status.color}`}>
+                  {status.label}
+                </span>
+                <button
+                  onClick={() => copyCode(code.code)}
+                  className="flex items-center gap-1.5 rounded-lg border border-neutral-200 hover:border-primary-300 px-2.5 py-1.5 text-xs font-medium text-neutral-600 hover:text-primary-600 transition-colors"
+                >
+                  <Copy size={12} />
+                  {copiedCode === code.code ? "Copied!" : "Copy"}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 const TABS = [
   { id: "overview",  label: "Overview",  icon: User },
   { id: "orders",    label: "My Orders", icon: ShoppingBag },
+  { id: "discounts", label: "My Discounts", icon: Tag },
   { id: "referrals", label: "Referrals", icon: Gift },
   { id: "profile",   label: "Profile",   icon: User },
   { id: "address",   label: "Address",   icon: MapPin },
@@ -678,6 +889,7 @@ export default function Account() {
           {activeTab === "orders" && (
             <OrdersTab orders={orders} isLoading={ordersLoading} />
           )}
+          {activeTab === "discounts" && <DiscountsTab />}
           {activeTab === "referrals" && <ReferralsTab />}
           {activeTab === "profile" && (
             <ProfileTab customer={customer ?? authCustomer} />

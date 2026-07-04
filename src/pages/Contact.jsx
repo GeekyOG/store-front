@@ -15,7 +15,7 @@ const CONTACT_INFO = [
     color: "#8b5cf6",
     bg: "#8b5cf615",
     label: "Phone",
-    lines: ["+234 703 878 4788", "Mon–Fri, 9am–6pm"],
+    lines: ["+234 703 878 4788", "Mon–Sat, 9am–6pm"],
   },
   {
     icon: Mail,
@@ -29,7 +29,7 @@ const CONTACT_INFO = [
     color: "#ef4444",
     bg: "#ef444415",
     label: "Business Hours",
-    lines: ["Mon – Fri: 9:00 AM – 6:00 PM", "Sat: 10:00 AM – 4:00 PM"],
+    lines: ["Mon – Sat: 9:00 AM – 6:00 PM", "Sun: 10:00 AM – 4:00 PM"],
   },
 ];
 

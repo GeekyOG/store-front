@@ -11,11 +11,27 @@ import {
   ShieldCheck,
   Truck,
   RefreshCw,
+  Star,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
-import { useGetPublicProductQuery } from "../api/storefrontApi";
+import { useGetPublicProductQuery, useAddReviewMutation, useGetMyOrdersQuery } from "../api/storefrontApi";
 import { addToCart, selectCartItems } from "../store/cartSlice";
 import { toggleWishlist, selectIsWishlisted } from "../store/wishlistSlice";
+import { selectCurrentCustomer } from "../store/authSlice";
+
+function StarRating({ value, size = 14 }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Star
+          key={i}
+          size={size}
+          className={i < value ? "text-amber-400 fill-amber-400" : "text-neutral-200 fill-neutral-200"}
+        />
+      ))}
+    </div>
+  );
+}
 
 export default function ProductDetail() {
   const { id } = useParams();
@@ -27,9 +43,15 @@ export default function ProductDetail() {
   const [selectedOptions, setSelectedOptions] = useState({});
   const [qty, setQty] = useState(1);
   const [addedFeedback, setAddedFeedback] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState("");
+  const [reviewError, setReviewError] = useState("");
 
   const cartItems = useSelector(selectCartItems);
   const wishlisted = useSelector(selectIsWishlisted(Number(id)));
+  const customer = useSelector(selectCurrentCustomer);
+  const { data: myOrdersData } = useGetMyOrdersQuery(undefined, { skip: !customer });
+  const [addReview, { isLoading: submittingReview }] = useAddReviewMutation();
 
   if (isLoading) {
     return (
@@ -67,7 +89,7 @@ export default function ProductDetail() {
     ? (product.StorefrontSerialNumbers?.length ?? 0)
     : (product.online_quantity ?? 0);
   const inStock = stockCount > 0;
-  const maxQty = product.is_serialized ? 1 : Math.min(stockCount, 99);
+  const maxQty = Math.min(stockCount, 99);
 
   // Check if this exact variant combo is already in cart
   const optKey = JSON.stringify(selectedOptions);
@@ -81,6 +103,32 @@ export default function ProductDetail() {
   const allVariantsSelected =
     selectableVariants.length === 0 ||
     selectableVariants.every((v) => selectedOptions[v.name]);
+
+  const reviews = [...(product.Reviews ?? [])].sort(
+    (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+  );
+  const avgRating = reviews.length
+    ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+    : 0;
+  const myReview = customer ? reviews.find((r) => r.customerId === customer.id) : null;
+  // Only customers with a delivered order containing this product may review it.
+  const hasDeliveredThisProduct = (myOrdersData?.orders ?? []).some(
+    (o) => o.status === "delivered" &&
+      (o.StorefrontOrderItems ?? []).some((it) => it.storefrontProductId === product.id),
+  );
+  const canReview = !!customer && !myReview && hasDeliveredThisProduct;
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    setReviewError("");
+    try {
+      await addReview({ productId: product.id, rating: reviewRating, comment: reviewComment }).unwrap();
+      setReviewComment("");
+      setReviewRating(5);
+    } catch (err) {
+      setReviewError(err?.data?.message ?? "Failed to submit review.");
+    }
+  };
 
   const handleAddToCart = () => {
     if (!inStock || !allVariantsSelected) return;
@@ -249,7 +297,7 @@ export default function ProductDetail() {
             ))}
 
             {/* Quantity */}
-            {inStock && !product.is_serialized && (
+            {inStock && (
               <div>
                 <p className="mb-2 text-sm font-semibold text-neutral-700">
                   Quantity
@@ -359,6 +407,82 @@ export default function ProductDetail() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* ── Reviews ───────────────────────────────────────────────────────── */}
+        <div className="mt-10 pt-8 border-t border-neutral-200">
+          <h2 className="text-lg font-bold text-neutral-800 mb-4">Customer Reviews</h2>
+
+          {reviews.length > 0 && (
+            <div className="flex items-center gap-2 mb-6">
+              <StarRating value={Math.round(avgRating)} size={16} />
+              <span className="text-sm font-semibold text-neutral-700">{avgRating.toFixed(1)}</span>
+              <span className="text-sm text-neutral-400">
+                ({reviews.length} review{reviews.length !== 1 ? "s" : ""})
+              </span>
+            </div>
+          )}
+
+          {canReview && (
+            <form
+              onSubmit={handleSubmitReview}
+              className="mb-6 rounded-2xl border border-neutral-200 bg-white p-5 space-y-3"
+            >
+              <p className="text-sm font-semibold text-neutral-700">Write a review</p>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <button type="button" key={i} onClick={() => setReviewRating(i + 1)}>
+                    <Star
+                      size={22}
+                      className={i < reviewRating ? "text-amber-400 fill-amber-400" : "text-neutral-200 fill-neutral-200"}
+                    />
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                rows={3}
+                placeholder="Share your thoughts about this product… (optional)"
+                className="w-full rounded-xl border border-neutral-200 px-3.5 py-2.5 text-sm outline-none focus:border-primary-400 focus:ring-2 focus:ring-primary-50 transition-all resize-none"
+              />
+              {reviewError && <p className="text-xs text-red-500">{reviewError}</p>}
+              <button
+                type="submit"
+                disabled={submittingReview}
+                className="rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60 transition-colors"
+              >
+                {submittingReview ? "Submitting…" : "Submit Review"}
+              </button>
+            </form>
+          )}
+
+          {myReview && (
+            <p className="mb-6 text-xs text-emerald-600 font-medium">
+              ✓ You've reviewed this product.
+            </p>
+          )}
+
+          {reviews.length === 0 ? (
+            <p className="text-sm text-neutral-400">No reviews yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((r) => (
+                <div key={r.id} className="rounded-2xl border border-neutral-200 bg-white p-4">
+                  <div className="flex items-center gap-2">
+                    <StarRating value={r.rating} />
+                    <span className="text-xs font-semibold text-neutral-700">{r.customer_name}</span>
+                    <span className="text-[11px] text-neutral-400">
+                      {new Date(r.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                  {r.comment && (
+                    <p className="text-sm text-neutral-600 mt-2 whitespace-pre-line">{r.comment}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

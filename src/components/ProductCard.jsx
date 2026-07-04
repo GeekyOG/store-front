@@ -1,13 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { Package, Heart, ShoppingCart, Check } from "lucide-react";
-import { addToCart, selectIsInCart } from "../store/cartSlice";
+import { Package, Heart, ShoppingCart, Minus, Plus } from "lucide-react";
+import { addToCart, removeFromCart, updateQuantity, selectCartItems } from "../store/cartSlice";
 import { toggleWishlist, selectIsWishlisted } from "../store/wishlistSlice";
 
 export default function ProductCard({ product }) {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const inCart = useSelector(selectIsInCart(product.id));
+  const cartItems = useSelector(selectCartItems);
+  // Cards only ever add the no-options variant ("{}") — products with real
+  // variant choices route to the detail page instead (see hasVariants below).
+  const cartItem = cartItems.find((i) => i.id === product.id && i.optKey === "{}");
+  const cartQty = cartItem?.quantity ?? 0;
   const wishlisted = useSelector(selectIsWishlisted(product.id));
 
   const thumb =
@@ -27,7 +31,8 @@ export default function ProductCard({ product }) {
     ? (product.StorefrontSerialNumbers?.length ?? 0)
     : (product.online_quantity ?? 0);
   const inStock = stockCount > 0;
- 
+  const maxQty = stockCount;
+
   const handleCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -37,6 +42,23 @@ export default function ProductCard({ product }) {
       navigate(`/products/${product.id}`);
     } else {
       dispatch(addToCart({ product, selectedOptions: {}, quantity: 1 }));
+    }
+  };
+
+  const increment = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (cartQty >= maxQty) return;
+    dispatch(addToCart({ product, selectedOptions: {}, quantity: 1 }));
+  };
+
+  const decrement = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (cartQty <= 1) {
+      dispatch(removeFromCart({ id: product.id, optKey: "{}" }));
+    } else {
+      dispatch(updateQuantity({ id: product.id, optKey: "{}", quantity: cartQty - 1 }));
     }
   };
 
@@ -113,25 +135,38 @@ export default function ProductCard({ product }) {
               </span>
             )}
           </div>
-          {/* Cart button */}
-          <button
-            onClick={handleCart}
-            disabled={!inStock}
-            className={`shrink-0 h-8 w-8 rounded-xl flex items-center justify-center border transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
-              inCart
-                ? "bg-emerald-50 border-emerald-200 text-emerald-600"
-                : "bg-primary-50 border-primary-100 text-primary-600 hover:bg-primary-100"
-            }`}
-            title={
-              inCart
-                ? "Already in cart"
-                : hasVariants
-                  ? "Select options"
-                  : "Add to cart"
-            }
-          >
-            {inCart ? <Check size={14} /> : <ShoppingCart size={14} />}
-          </button>
+          {/* Cart button / quantity stepper */}
+          {cartQty > 0 && !hasVariants ? (
+            <div className="shrink-0 flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700">
+              <button
+                onClick={decrement}
+                className="h-8 w-7 flex items-center justify-center hover:bg-emerald-100 rounded-l-xl transition-colors"
+                title="Decrease quantity"
+              >
+                <Minus size={12} />
+              </button>
+              <span className="min-w-[1rem] text-center text-xs font-bold tabular-nums">
+                {cartQty}
+              </span>
+              <button
+                onClick={increment}
+                disabled={cartQty >= maxQty}
+                className="h-8 w-7 flex items-center justify-center hover:bg-emerald-100 rounded-r-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                title="Increase quantity"
+              >
+                <Plus size={12} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={handleCart}
+              disabled={!inStock}
+              className="shrink-0 h-8 w-8 rounded-xl flex items-center justify-center border transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary-50 border-primary-100 text-primary-600 hover:bg-primary-100"
+              title={hasVariants ? "Select options" : "Add to cart"}
+            >
+              <ShoppingCart size={14} />
+            </button>
+          )}
         </div>
       </div>
     </Link>

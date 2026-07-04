@@ -26,11 +26,15 @@ const cartSlice = createSlice({
       const { product, selectedOptions = {}, quantity = 1 } = payload;
       const optKey = JSON.stringify(selectedOptions);
       const price = product.discount_price ?? product.regular_price;
-      const maxQty = product.is_serialized ? 1 : (product.online_quantity ?? 99);
+      // Serialized products: each entry in StorefrontSerialNumbers is one available unit.
+      const maxQty = product.is_serialized
+        ? (product.StorefrontSerialNumbers?.length ?? 1)
+        : (product.online_quantity ?? 99);
       const existing = state.items.find(
         (i) => i.id === product.id && i.optKey === optKey
       );
       if (existing) {
+        existing.maxQty = maxQty;
         existing.quantity = Math.min(existing.quantity + quantity, maxQty);
       } else {
         state.items.push({

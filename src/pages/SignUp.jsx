@@ -81,7 +81,7 @@ export default function SignUp() {
           </div>
           <h1 className="text-xl font-extrabold text-neutral-800">Account created!</h1>
           <p className="text-sm text-neutral-500 mt-1.5">
-            Here's your 5% off welcome code — we've also emailed it to you.
+            Here's your ₦10,000 off welcome code — we've also emailed it to you.
           </p>
 
           <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary-200 bg-primary-50 px-4 py-3">
@@ -93,7 +93,7 @@ export default function SignUp() {
           {myReferralCode && (
             <p className="text-xs text-neutral-500 mt-4">
               Your referral code is <span className="font-bold text-neutral-700">{myReferralCode}</span> — share
-              it and earn 5% when a friend spends over ₦50,000.{" "}
+              it and earn ₦5,000 when a friend spends over ₦50,000 on their first order.{" "}
               <Link to="/account" className="text-primary-600 font-semibold hover:underline">
                 View in Account
               </Link>

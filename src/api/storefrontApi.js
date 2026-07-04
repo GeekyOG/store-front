@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const BASE_URL = "https://api.sammytechgadgets.com/api";
-// const BASE_URL = "http://localhost:8080/api";
+// const BASE_URL = "https://api.sammytechgadgets.com/api";
+const BASE_URL = "http://localhost:8080/api";
 
 
 export const storefrontApi = createApi({
@@ -14,7 +14,7 @@ export const storefrontApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Product", "Cms", "Categories", "Customer", "ShippingFee"],
+  tagTypes: ["Product", "Cms", "Categories", "Customer", "ShippingFee", "Review", "DiscountCode"],
   endpoints: (builder) => ({
     // ── Products ──────────────────────────────────────────────────────────────
     getPublicProducts: builder.query({
@@ -23,7 +23,15 @@ export const storefrontApi = createApi({
     }),
     getPublicProduct: builder.query({
       query: (id) => `/storefront/public/products/${id}`,
-      providesTags: (_r, _e, id) => [{ type: "Product", id }],
+      providesTags: (_r, _e, id) => [{ type: "Product", id }, "Review"],
+    }),
+    addReview: builder.mutation({
+      query: ({ productId, rating, comment }) => ({
+        url: `/storefront/reviews/${productId}`,
+        method: "POST",
+        body: { rating, comment },
+      }),
+      invalidatesTags: (_r, _e, { productId }) => [{ type: "Product", id: productId }, "Review"],
     }),
     getPublicCms: builder.query({
       query: () => "/storefront/cms",
@@ -68,6 +76,10 @@ export const storefrontApi = createApi({
     getReferralSummary: builder.query({
       query: () => "/storefront/auth/referrals",
       providesTags: ["Customer"],
+    }),
+    getMyDiscountCodes: builder.query({
+      query: () => "/storefront/auth/discount-codes",
+      providesTags: ["DiscountCode"],
     }),
 
     // ── Orders ──────────────────────────────────────────────────────────────
@@ -124,6 +136,7 @@ export const storefrontApi = createApi({
 export const {
   useGetPublicProductsQuery,
   useGetPublicProductQuery,
+  useAddReviewMutation,
   useGetPublicCmsQuery,
   useGetPublicCategoriesQuery,
   useGetPublicStorefrontSubcategoriesQuery,
@@ -136,6 +149,7 @@ export const {
   useUpdateProfileMutation,
   useUpdatePasswordMutation,
   useGetReferralSummaryQuery,
+  useGetMyDiscountCodesQuery,
   usePlaceOrderMutation,
   useGetMyOrdersQuery,
   useGetOrderByNumberQuery,
