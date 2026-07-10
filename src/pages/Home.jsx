@@ -13,6 +13,12 @@ import {
   Phone,
   Store,
   X,
+  Lock,
+  CreditCard,
+  Smartphone,
+  ArrowLeftRight,
+  Mail,
+  MessageCircle,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -25,6 +31,7 @@ import {
   useGetPublicCategoriesQuery,
 } from "../api/storefrontApi";
 import ProductCard from "../components/ProductCard";
+import { resolveImageUrl } from "../utils/imageUrl";
 
 // ── Auto-swiping product carousel ───────────────────────────────────────────────
 function ProductCarousel({ products, delay = 2000, reverse = false }) {
@@ -76,9 +83,9 @@ function BannerSlider({ banners }) {
       style={{ "--swiper-pagination-color": "#ef4444" }}
     >
       {banners.map((banner, index) => (
-        <SwiperSlide key={index}>
+        <SwiperSlide key={banner.id ?? index}>
           <img
-            src={banner}
+            src={resolveImageUrl(banner.url)}
             alt={`Promotion ${index + 1}`}
             className="w-full h-full object-cover object-center"
           />
@@ -141,7 +148,7 @@ function CtaSidebar() {
             <Truck size={16} />
           </div>
           <p className="text-xs font-semibold text-neutral-800 group-hover:text-primary-600 transition-colors">
-            Send Your Packages
+           Sell Your Phone at Ease
           </p>
         </Link>
         <Link to="/swap" className="flex items-center gap-3 px-4 py-3.5 group">
@@ -208,44 +215,27 @@ function CardSkeleton() {
 const FEATURE_BADGES = [
   {
     Icon: Truck,
-    bg: "#07b6b018",
-    color: "#07b6b0",
     title: "Fast Delivery",
     desc: "24hrs within Delta, 24-72hrs nationwide",
-    details:
-      "Orders within Delta State are delivered within 24 hours. Everywhere else in Nigeria, delivery takes between 24 and 72 hours, depending on your location. We partner with trusted couriers to make sure your order arrives safely and on time.",
   },
   {
     Icon: ShieldCheck,
-    bg: "#3b82f618",
-    color: "#3b82f6",
     title: "Secure Payment",
     desc: "100% secure transactions",
-    details:
-      "All payments are processed through encrypted, PCI-compliant channels. Your card and personal details are never stored on our servers.",
   },
   {
     Icon: RefreshCw,
-    bg: "#8b5cf618",
-    color: "#8b5cf6",
     title: "Easy Returns",
     desc: "Hassle-free return policy",
-    details:
-      "Not satisfied with your purchase? Reach out within our return window and we'll help you exchange or refund it — no complicated forms, no hidden fees.",
   },
   {
     Icon: Headphones,
-    bg: "#f59e0b18",
-    color: "#f59e0b",
     title: "24/7 Support",
     desc: "Always here to help",
-    details:
-      "Our support team is available around the clock via phone, email, or the contact form — whether you have a question before you buy or need help after delivery.",
   },
 ];
 
-function FeatureInfoModal({ feature, onClose }) {
-  const { Icon, bg, color, title, details } = feature;
+function FastDeliveryModal({ onClose }) {
   return (
     <div
       className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
@@ -263,16 +253,289 @@ function FeatureInfoModal({ feature, onClose }) {
           <X size={16} />
         </button>
 
-        <div className="px-7 pt-9 pb-8 text-center">
-          <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
-            style={{ background: bg }}
-          >
-            <Icon size={26} style={{ color }} />
+        <div className="px-7 pt-9 pb-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#07b6b018]">
+            <Truck size={26} className="text-primary-600" style={{ color: "#07b6b0" }} />
           </div>
 
-          <h2 className="text-lg font-extrabold text-neutral-800">{title}</h2>
-          <p className="mt-2 text-sm text-neutral-500 leading-relaxed">{details}</p>
+          <h2 className="flex items-center justify-center gap-2 text-lg font-extrabold text-neutral-800">
+            <span>🚚</span> Fast &amp; Reliable Delivery
+          </h2>
+
+          <p className="mt-4 text-sm text-neutral-600 leading-relaxed">
+            Orders within Delta State are delivered within{" "}
+            <span className="font-semibold" style={{ color: "#07b6b0" }}>
+              24 hours
+            </span>
+            .
+          </p>
+          <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+            Deliveries to other states across Nigeria typically arrive within{" "}
+            <span className="font-semibold" style={{ color: "#07b6b0" }}>
+              24–72 hours
+            </span>
+            , depending on your location.
+          </p>
+          <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+            We work with trusted courier partners to ensure every order is
+            delivered safely, securely, and on time.
+          </p>
+
+          <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
+            {[
+              { Icon: ShieldCheck, label: "Trusted Couriers" },
+              { Icon: Clock, label: "Fast Delivery" },
+              { Icon: Package, label: "Safe & Secure Handling" },
+            ].map(({ Icon, label }) => (
+              <div
+                key={label}
+                className="flex flex-1 flex-col items-center gap-1.5 px-1"
+              >
+                <Icon size={18} style={{ color: "#07b6b0" }} />
+                <span className="text-[11px] font-medium text-neutral-600 leading-tight">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 w-full rounded-xl py-3 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
+            style={{ background: "#07b6b0" }}
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SecurePaymentModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        <div className="px-7 pt-9 pb-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50">
+            <ShieldCheck size={26} className="text-blue-500" />
+          </div>
+
+          <h2 className="text-lg font-extrabold text-neutral-800">Secure Payment</h2>
+          <p className="mt-2 text-sm text-neutral-500 leading-relaxed">
+            Your payment is protected with bank-level encryption. We never store
+            your card details on our servers.
+          </p>
+
+          <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
+            {[
+              { Icon: Lock, color: "#22c55e", title: "SSL Secured", label: "256-bit encryption" },
+              { Icon: CreditCard, color: "#3b82f6", title: "Paystack", label: "Secure Payments" },
+              { Icon: ShieldCheck, color: "#22c55e", title: "100% Genuine", label: "Authentic Products" },
+            ].map(({ Icon, color, title, label }) => (
+              <div key={title} className="flex flex-1 flex-col items-center gap-1 px-1">
+                <Icon size={18} style={{ color }} />
+                <span className="text-[11px] font-bold text-neutral-700 leading-tight text-center">
+                  {title}
+                </span>
+                <span className="text-[10px] text-neutral-400 leading-tight text-center">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 py-3.5 text-sm font-bold text-white shadow-md hover:bg-primary-700 transition-colors"
+          >
+            <Lock size={15} />
+            Continue Shopping
+          </button>
+
+          <Link
+            to="/contact"
+            onClick={onClose}
+            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-primary-600 transition-colors"
+          >
+            Learn more about our security <ChevronRight size={14} />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EasyReturnsModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        <div className="px-7 pt-9 pb-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#8b5cf618]">
+            <RefreshCw size={26} style={{ color: "#8b5cf6" }} />
+          </div>
+
+          <h2 className="flex items-center justify-center gap-2 text-lg font-extrabold text-neutral-800">
+            <span>🔄</span> Easy Returns &amp; Exchanges
+          </h2>
+
+          <p className="mt-4 text-sm text-neutral-600 leading-relaxed">
+            Not satisfied with your purchase? You can request a return within{" "}
+            <span className="font-semibold" style={{ color: "#8b5cf6" }}>
+              14 days
+            </span>{" "}
+            for UK-used devices, or{" "}
+            <span className="font-semibold" style={{ color: "#8b5cf6" }}>
+              30 days
+            </span>{" "}
+            for brand new phones.
+          </p>
+          <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+            We'll help you exchange or refund it — no complicated forms, no
+            hidden fees.
+          </p>
+
+          <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
+            {[
+              { Icon: Clock, label: "14–30 Day Window" },
+              { Icon: RefreshCw, label: "Easy Exchange" },
+              { Icon: ShieldCheck, label: "No Hidden Fees" },
+            ].map(({ Icon, label }) => (
+              <div
+                key={label}
+                className="flex flex-1 flex-col items-center gap-1.5 px-1"
+              >
+                <Icon size={18} style={{ color: "#8b5cf6" }} />
+                <span className="text-[11px] font-medium text-neutral-600 leading-tight text-center">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 w-full rounded-xl py-3 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
+            style={{ background: "#8b5cf6" }}
+          >
+            Continue Shopping
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SupportModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        <div className="px-7 pt-9 pb-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#f59e0b18]">
+            <Headphones size={26} style={{ color: "#f59e0b" }} />
+          </div>
+
+          <h2 className="flex items-center justify-center gap-2 text-lg font-extrabold text-neutral-800">
+            <span>🎧</span> We're Here to Help
+          </h2>
+
+          <p className="mt-4 text-sm text-neutral-600 leading-relaxed">
+            Have a question before you buy, or need help after delivery?
+            Reach us anytime by email or through our contact form — we
+            typically reply within{" "}
+            <span className="font-semibold" style={{ color: "#f59e0b" }}>
+              24 hours
+            </span>
+            .
+          </p>
+          <p className="mt-3 text-sm text-neutral-600 leading-relaxed">
+            Prefer to talk? Call or WhatsApp us{" "}
+            <span className="font-semibold" style={{ color: "#f59e0b" }}>
+              Mon–Sat, 9am–6pm
+            </span>{" "}
+            and our team will be happy to help.
+          </p>
+
+          <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
+            {[
+              { Icon: Mail, title: "Email", label: "24hr reply" },
+              { Icon: Phone, title: "Call Us", label: "Mon–Sat 9–6" },
+              { Icon: MessageCircle, title: "WhatsApp", label: "Chat now" },
+            ].map(({ Icon, title, label }) => (
+              <div key={title} className="flex flex-1 flex-col items-center gap-1 px-1">
+                <Icon size={18} style={{ color: "#f59e0b" }} />
+                <span className="text-[11px] font-bold text-neutral-700 leading-tight text-center">
+                  {title}
+                </span>
+                <span className="text-[10px] text-neutral-400 leading-tight text-center">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 w-full rounded-xl py-3 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
+            style={{ background: "#f59e0b" }}
+          >
+            Continue Shopping
+          </button>
+
+          <a
+            href="https://wa.me/+2347038784788?text=Hello%20SammyTech"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-primary-600 transition-colors"
+          >
+            Chat with us on WhatsApp <ChevronRight size={14} />
+          </a>
         </div>
       </div>
     </div>
@@ -367,25 +630,20 @@ export default function Home() {
       </div>
 
       {/* ── Feature Badges ────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-neutral-200 shadow-sm">
-        <div className="mx-auto max-w-7xl px-4 py-4 grid grid-cols-2 sm:grid-cols-4 divide-x divide-neutral-100">
+      <div className="mx-auto max-w-7xl px-4 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-neutral-100 rounded-2xl border border-neutral-200 bg-white shadow-sm">
           {FEATURE_BADGES.map((feature) => {
-            const { Icon, bg, color, title, desc } = feature;
+            const { Icon, title, desc } = feature;
             return (
               <button
                 key={title}
                 type="button"
                 onClick={() => setActiveFeature(feature)}
-                className="flex items-center gap-3 px-4 first:pl-0 last:pr-0 py-1 text-left hover:opacity-80 transition-opacity"
+                className="flex items-center gap-3 px-4 py-3.5 text-left hover:bg-neutral-50 transition-colors"
               >
-                <div
-                  className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0"
-                  style={{ background: bg }}
-                >
-                  <Icon size={18} style={{ color }} />
-                </div>
+                <Icon size={22} className="shrink-0 text-primary-600" />
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-neutral-700 truncate">
+                  <p className="text-xs font-semibold text-neutral-800 truncate">
                     {title}
                   </p>
                   <p className="text-[10px] text-neutral-400 truncate">{desc}</p>
@@ -396,36 +654,21 @@ export default function Home() {
         </div>
       </div>
 
-      {activeFeature && (
-        <FeatureInfoModal feature={activeFeature} onClose={() => setActiveFeature(null)} />
+      {activeFeature && activeFeature.title === "Fast Delivery" && (
+        <FastDeliveryModal onClose={() => setActiveFeature(null)} />
       )}
-
-      {/* ── Swap CTA ──────────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-4 mt-8">
-        <Link
-          to="/swap"
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-primary-500 text-white px-6 sm:px-10 py-7 text-center sm:text-left"
-        >
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 hidden md:flex rounded-2xl bg-white/15  items-center justify-center shrink-0">
-              <RefreshCw size={22} />
-            </div>
-            <div>
-              <p className="text-xl font-extrabold leading-tight">Want to Swap?</p>
-              <p className="text-primary-100 text-sm mt-0.5">
-                Trade in your old phone and get an instant estimated value
-              </p>
-            </div>
-          </div>
-          <span className="inline-flex items-center gap-2 bg-white text-primary-700 font-bold px-6 py-3 rounded-xl hover:bg-primary-50 transition-colors shadow-md shrink-0">
-            Swap Your Phone Here <ChevronRight size={16} />
-          </span>
-        </Link>
-      </div>
-
-      <main className="mx-auto max-w-7xl px-4 py-10 space-y-14">
-        {/* ── Best Selling ────────────────────────────────────────────────────── */}
-        {bestSelling.length > 0 && (
+      {activeFeature && activeFeature.title === "Secure Payment" && (
+        <SecurePaymentModal onClose={() => setActiveFeature(null)} />
+      )}
+      {activeFeature && activeFeature.title === "Easy Returns" && (
+        <EasyReturnsModal onClose={() => setActiveFeature(null)} />
+      )}
+      {activeFeature && activeFeature.title === "24/7 Support" && (
+        <SupportModal onClose={() => setActiveFeature(null)} />
+      )}
+         {/* ── Best Selling ────────────────────────────────────────────────────── */}
+          <div className="mx-auto max-w-7xl px-4 mt-8">
+{bestSelling.length > 0 && (
           <section>
             <SectionHeader
               icon={Star}
@@ -437,6 +680,39 @@ export default function Home() {
             <ProductCarousel products={bestSelling} delay={2000} />
           </section>
         )}
+
+          </div>
+        
+
+      {/* ── Swap CTA ──────────────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-7xl px-4 mt-8">
+        <Link
+          to="/swap"
+          className="relative flex items-center gap-4 overflow-hidden justify-center rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-primary-700 px-5 py-6 text-white sm:px-10 sm:py-7"
+        >
+          {/* Decorative phone stack, faded into the background */}
+          <div className="hidden items-center justify-center gap-1 w-[250px] md:w-[300px] sm:flex">
+            <img src="/phones.png" className="absolute bottom-0 w-[250px] md:w-[300px]"/>
+          </div>
+
+          <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20">
+            <ArrowLeftRight size={20} />
+          </div>
+
+          <div className="relative z-10 min-w-0">
+            <p className="text-lg font-extrabold leading-tight sm:text-xl">Want to Swap?</p>
+            <p className="mt-0.5 text-sm text-primary-100 max-w-[300px]">
+              Trade in your old phone and get the best value today.
+            </p>
+            <span className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-primary-700 shadow-md transition-colors hover:bg-primary-50">
+              <Smartphone size={15} /> Swap Your Phone <ChevronRight size={15} />
+            </span>
+          </div>
+        </Link>
+      </div>
+
+      <main className="mx-auto max-w-7xl px-4 py-10 space-y-14">
+       
 
         {/* ── Deal of the Day ─────────────────────────────────────────────────── */}
         {dealOfDay.length > 0 && (
@@ -514,7 +790,7 @@ export default function Home() {
               <p className="text-neutral-500 font-medium">No products yet</p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {products.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}

@@ -3,7 +3,7 @@ import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   Search, ShoppingCart, X, Package, ChevronRight,
   Mail, Phone, MapPin, UserCircle, LogOut, User, Heart, Menu,
-  Home, ShoppingBag, Grid2x2, Headphones,
+  Home, ShoppingBag, Grid2x2, Headphones, Star, ShieldCheck,
 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentCustomer, logout } from "../store/authSlice";
@@ -12,6 +12,7 @@ import { selectWishlistCount } from "../store/wishlistSlice";
 import { useGetPublicProductsQuery } from "../api/storefrontApi";
 import WelcomeDiscountModal from "../components/WelcomeDiscountModal";
 import ScrollToTop from "../components/ScrollToTop";
+import { productThumb } from "../utils/imageUrl";
 
 const POPUP_DISMISSED_KEY = "sf_popup_dismissed";
 
@@ -20,6 +21,12 @@ const NAV_LINKS = [
   { to: "/products", label: "Products" },
   { to: "/about", label: "About Us" },
   { to: "/contact", label: "Contact" },
+];
+
+const TRUST_BAR_ITEMS = [
+  { Icon: Star, iconClass: "fill-amber-400 text-amber-400", label: "Trusted by customers across Nigeria" },
+  { Icon: ShieldCheck, iconClass: "text-white", label: "100% Genuine" },
+  { Icon: Headphones, iconClass: "text-white", label: "7-Day Support" },
 ];
 
 const BOTTOM_NAV_LINKS = [
@@ -126,9 +133,7 @@ function SearchBar({ mobile = false }) {
               </div>
 
               {suggestions.map((product) => {
-                const thumb =
-                  product.featured_image ||
-                  product.StorefrontImages?.[0]?.image_data;
+                const thumb = productThumb(product);
                 const price = product.discount_price ?? product.regular_price;
                 return (
                   <Link
@@ -347,11 +352,27 @@ export default function Layout() {
     <div className="min-h-screen bg-neutral-100 font-sans flex flex-col pb-16 sm:pb-0">
       <ScrollToTop />
       {showWelcomePopup && <WelcomeDiscountModal onClose={dismissWelcomePopup} />}
-        <div className="hidden sm:block border-t border-white/10 bg-red-700 py-3">
-          <div className="mx-auto max-w-7xl px-4 flex items-center overflow-x-auto no-scrollbar">
-          <p className="text-white text-sm font-medium">
-            Welcome to SammyTech! Shop the latest deals and offers.
-          </p>
+        <div className="border-t border-white/10 bg-primary-600 py-2.5">
+          {/* Mobile: continuous sliding ticker (content doubled for a seamless loop) */}
+          <div className="overflow-hidden">
+            <div className="flex md:hidden w-max animate-marquee items-center gap-10 pl-4">
+              {[...TRUST_BAR_ITEMS, ...TRUST_BAR_ITEMS].map(({ Icon, iconClass, label }, i) => (
+                <div key={i} className="flex shrink-0 items-center gap-1.5">
+                  <Icon size={14} className={`shrink-0 ${iconClass}`} />
+                  <span className="whitespace-nowrap text-xs font-medium text-white">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: static, evenly spaced */}
+          <div className="mx-auto hidden max-w-7xl items-center justify-between gap-4 px-4 md:flex">
+            {TRUST_BAR_ITEMS.map(({ Icon, iconClass, label }) => (
+              <div key={label} className="flex shrink-0 items-center gap-1.5">
+                <Icon size={14} className={`shrink-0 ${iconClass}`} />
+                <span className="whitespace-nowrap text-sm font-medium text-white">{label}</span>
+              </div>
+            ))}
           </div>
         </div>
       {/* ── Header ─────────────────────────────────────────────────────────── */}
@@ -360,7 +381,7 @@ export default function Layout() {
           {/* Mobile menu toggle */}
           <button
             onClick={() => setMobileNavOpen(true)}
-            className="sm:hidden shrink-0 p-2 -ml-2 rounded-xl text-neutral-500 hover:text-primary-600 hover:bg-neutral-100 transition-all"
+            className="md:hidden shrink-0 p-2 -ml-2 rounded-xl text-neutral-500 hover:text-primary-600 hover:bg-neutral-100 transition-all"
             aria-label="Open menu"
             aria-expanded={mobileNavOpen}
           >
@@ -373,7 +394,8 @@ export default function Layout() {
           </Link>
 
           {/* Desktop search */}
-          <div className="hidden sm:flex flex-1">
+          <div className="flex-1 md:hidden"></div>
+          <div className="hidden md:flex flex-1">
             <SearchBar />
           </div>
 
@@ -386,12 +408,12 @@ export default function Layout() {
         </div>
 
         {/* Mobile search */}
-        <div className="sm:hidden px-4 pb-2">
+        <div className="md:hidden px-4 pb-2">
           <SearchBar mobile />
         </div>
 
         {/* ── Secondary nav (desktop) ───────────────────────────────────────── */}
-        <div className="hidden sm:block border-t border-white/10 bg-red-700">
+        <div className="hidden md:block border-t border-white/10 bg-red-700">
           <div className="mx-auto max-w-7xl px-4 flex items-center overflow-x-auto no-scrollbar">
             {NAV_LINKS.map(({ to, label, end }) => (
               <NavLink
@@ -415,14 +437,14 @@ export default function Layout() {
 
       {/* ── Mobile nav drawer ──────────────────────────────────────────────── */}
       <div
-        className={`sm:hidden fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
+        className={`md:hidden fixed inset-0 z-40 bg-black/50 transition-opacity duration-300 ${
           mobileNavOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={() => setMobileNavOpen(false)}
         aria-hidden={!mobileNavOpen}
       />
       <div
-        className={`sm:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw] bg-neutral-900 text-white shadow-2xl transition-transform duration-300 ease-out ${
+        className={`md:hidden fixed inset-y-0 left-0 z-50 w-72 max-w-[80vw] bg-neutral-900 text-white shadow-2xl transition-transform duration-300 ease-out ${
           mobileNavOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -519,7 +541,7 @@ export default function Layout() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail size={14} className="text-primary-400 shrink-0" />
-                <span className="text-sm text-neutral-400">support@sammytechgadgets.com</span>
+                <span className="text-sm text-neutral-400 truncate">support@sammytechgadgets.com</span>
               </li>
             </ul>
           </div>

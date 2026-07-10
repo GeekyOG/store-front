@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// const BASE_URL = "https://api.sammytechgadgets.com/api";
-const BASE_URL = "http://localhost:8080/api";
+export const BASE_URL = "https://api.sammytechgadgets.com/api";
+// export const BASE_URL = "http://localhost:8080/api";
 
 
 export const storefrontApi = createApi({

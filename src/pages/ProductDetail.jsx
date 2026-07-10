@@ -18,6 +18,8 @@ import { useGetPublicProductQuery, useAddReviewMutation, useGetMyOrdersQuery } f
 import { addToCart, selectCartItems } from "../store/cartSlice";
 import { toggleWishlist, selectIsWishlisted } from "../store/wishlistSlice";
 import { selectCurrentCustomer } from "../store/authSlice";
+import { resolveImageUrl } from "../utils/imageUrl";
+import ProductTabs from "../components/ProductTabs";
 
 function StarRating({ value, size = 14 }) {
   return (
@@ -76,7 +78,7 @@ export default function ProductDetail() {
   }
 
   const allImages = [
-    ...(product.featured_image ? [{ image_data: product.featured_image }] : []),
+    ...(product.has_featured_image ? [{ url: product.featured_image_url }] : []),
     ...(product.StorefrontImages ?? []),
   ];
   const price = product.discount_price ?? product.regular_price;
@@ -175,7 +177,7 @@ export default function ProductDetail() {
             <div className="aspect-square rounded-2xl overflow-hidden bg-white border border-neutral-200 relative">
               {allImages.length > 0 ? (
                 <img
-                  src={allImages[selectedImage]?.image_data}
+                  src={resolveImageUrl(allImages[selectedImage]?.url)}
                   alt={product.display_name}
                   className="h-full w-full object-cover"
                 />
@@ -203,7 +205,7 @@ export default function ProductDetail() {
                     }`}
                   >
                     <img
-                      src={img.image_data}
+                      src={resolveImageUrl(img.url)}
                       alt=""
                       className="h-full w-full object-cover"
                     />
@@ -395,19 +397,11 @@ export default function ProductDetail() {
               ))}
             </div>
 
-            {/* Full description */}
-            {product.full_description && (
-              <div className="pt-4 border-t border-neutral-200">
-                <h3 className="mb-2 text-sm font-semibold text-neutral-700">
-                  Description
-                </h3>
-                <p className="text-sm text-neutral-500 leading-relaxed whitespace-pre-line">
-                  {product.full_description}
-                </p>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* ── Description / Specs / Warranty ───────────────────────────────── */}
+        <ProductTabs product={product} />
 
         {/* ── Reviews ───────────────────────────────────────────────────────── */}
         <div className="mt-10 pt-8 border-t border-neutral-200">

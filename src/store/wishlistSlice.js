@@ -1,4 +1,5 @@
 import { createSlice, current } from "@reduxjs/toolkit";
+import { productThumb } from "../utils/imageUrl";
 
 const KEY = "sf_wishlist";
 
@@ -11,8 +12,7 @@ const load = () => {
 
 const persist = (state) => {
   try {
-    const snap = current(state).items.map(({ image: _img, ...rest }) => rest);
-    localStorage.setItem(KEY, JSON.stringify({ items: snap }));
+    localStorage.setItem(KEY, JSON.stringify(current(state)));
   } catch (_) {}
 };
 
@@ -30,7 +30,7 @@ const wishlistSlice = createSlice({
           name: product.display_name,
           price: product.discount_price ?? product.regular_price,
           regular_price: product.regular_price,
-          image: product.featured_image || product.StorefrontImages?.[0]?.image_data || null,
+          image: productThumb(product) ?? null,
           category: product.Category?.name || null,
         });
       }

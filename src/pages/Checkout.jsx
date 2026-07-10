@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronRight, Package, CreditCard, Truck,
   MapPin, Lock, AlertCircle, Tag, X, Check, Minus, Plus, Gift,
+  ShieldCheck, Clock,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCartItems, selectCartTotal, clearCart, removeFromCart, updateQuantity } from "../store/cartSlice";
@@ -31,10 +32,84 @@ function Field({ label, error, required, children }) {
   );
 }
 
+function WarrantyModal({ onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        <div className="px-7 pt-9 pb-7 text-center">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#10b98118]">
+            <ShieldCheck size={26} style={{ color: "#10b981" }} />
+          </div>
+
+          <h2 className="flex items-center justify-center gap-2 text-lg font-extrabold text-neutral-800">
+            <span>🛡️</span> Warranty Policy
+          </h2>
+
+          <p className="mt-4 text-sm text-neutral-600 leading-relaxed">
+            Every order is covered. If a product develops a fault under
+            normal use within its warranty period, contact us for a repair,
+            replacement, or refund at our discretion.
+          </p>
+
+          <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
+            {[
+              { Icon: Clock, label: "14 Days — UK-Used Phones" },
+              { Icon: Package, label: "30 Days — Brand New Phones" },
+              { Icon: AlertCircle, label: "Excludes Liquid & Screen Damage" },
+            ].map(({ Icon, label }) => (
+              <div
+                key={label}
+                className="flex flex-1 flex-col items-center gap-1.5 px-1"
+              >
+                <Icon size={18} style={{ color: "#10b981" }} />
+                <span className="text-[11px] font-medium text-neutral-600 leading-tight text-center">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="mt-6 w-full rounded-xl py-3 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
+            style={{ background: "#10b981" }}
+          >
+            Got It, Continue Checkout
+          </button>
+
+          <Link
+            to="/terms-and-conditions"
+            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-primary-600 transition-colors"
+          >
+            View full warranty &amp; returns policy <ChevronRight size={14} />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const inputCls = (err) =>
   `w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition-all bg-white focus:ring-2 focus:ring-primary-50 ${
     err ? "border-red-300 focus:border-red-400" : "border-neutral-200 focus:border-primary-400"
   }`;
+
+const WARRANTY_POPUP_SHOWN_KEY = "sf_checkout_warranty_shown";
 
 export default function Checkout() {
   const dispatch      = useDispatch();
@@ -77,6 +152,15 @@ export default function Checkout() {
   const [errors,  setErrors]  = useState({});
   const [serverError, setServerError] = useState("");
   const [checkingStock, setCheckingStock] = useState(false);
+  const [showWarranty, setShowWarranty] = useState(false);
+
+  // Shown once per session so returning to checkout (e.g. after tweaking the
+  // cart) doesn't interrupt the customer with the same popup every time.
+  useEffect(() => {
+    if (sessionStorage.getItem(WARRANTY_POPUP_SHOWN_KEY)) return;
+    sessionStorage.setItem(WARRANTY_POPUP_SHOWN_KEY, "1");
+    setShowWarranty(true);
+  }, []);
 
   // The initial useState above only had the (possibly stale) Redux customer
   // to work with. Reconcile once the freshest profile arrives — but only
@@ -585,13 +669,25 @@ export default function Checkout() {
                       : "Place Order"}
               </button>
 
-              <p className="mt-3 text-[10px] text-neutral-400 text-center">
+              <button
+                type="button"
+                onClick={() => setShowWarranty(true)}
+                className="mt-3 flex w-full items-center justify-center gap-1.5 text-xs font-medium text-neutral-500 hover:text-primary-600 transition-colors"
+              >
+                <ShieldCheck size={13} className="text-emerald-500" />
+                Backed by our warranty policy
+                <ChevronRight size={12} />
+              </button>
+
+              <p className="mt-2 text-[10px] text-neutral-400 text-center">
                 By placing this order you agree to our Terms &amp; Privacy Policy
               </p>
             </div>
           </div>
         </div>
       </form>
+
+      {showWarranty && <WarrantyModal onClose={() => setShowWarranty(false)} />}
     </div>
   );
 }

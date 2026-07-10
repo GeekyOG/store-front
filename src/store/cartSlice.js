@@ -1,4 +1,5 @@
 import { createSlice, current } from "@reduxjs/toolkit";
+import { productThumb } from "../utils/imageUrl";
 
 const KEY = "sf_cart";
 
@@ -10,11 +11,9 @@ const load = () => {
 };
 
 // current() extracts a plain object from the Immer draft so JSON.stringify works reliably.
-// We strip `image` (base64) before writing to avoid localStorage quota errors.
 const persist = (state) => {
   try {
-    const snap = current(state).items.map(({ image: _img, ...rest }) => rest);
-    localStorage.setItem(KEY, JSON.stringify({ items: snap }));
+    localStorage.setItem(KEY, JSON.stringify(current(state)));
   } catch (_) {}
 };
 
@@ -42,7 +41,7 @@ const cartSlice = createSlice({
           name: product.display_name,
           price,
           regular_price: product.regular_price,
-          image: product.featured_image || product.StorefrontImages?.[0]?.image_data || null,
+          image: productThumb(product) ?? null,
           selectedOptions,
           optKey,
           quantity: Math.min(quantity, maxQty),

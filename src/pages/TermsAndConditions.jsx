@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { FileText, ChevronRight, ShieldAlert } from "lucide-react";
 
-const LAST_UPDATED = "July 2, 2026";
+const LAST_UPDATED = "July 10, 2026";
 
 const SECTIONS = [
   {
@@ -25,9 +25,15 @@ const SECTIONS = [
     ],
   },
   {
-    title: "4. Shipping & Delivery",
+    title: "4. Delivery Policy",
     body: [
-      `Delivery timeframes provided at checkout are estimates and not guaranteed. SammyTech is not liable for delays caused by circumstances beyond our reasonable control, including courier delays or incorrect delivery information provided by the customer.`,
+      `We deliver nationwide across Nigeria through trusted courier and dispatch rider partners.`,
+    ],
+    list: [
+      "Delivery timelines: within Delta State, orders typically arrive within 24 hours. Everywhere else in Nigeria, delivery takes 24–72 hours depending on your location.",
+      "Delivery coverage: we ship to every state in Nigeria. Remote areas may take slightly longer than the estimates above.",
+      "Delivery charges: your shipping fee is calculated automatically based on the delivery state you select at checkout and is shown in full before you pay — no hidden charges.",
+      "Delivery timeframes are estimates, not guarantees. SammyTech is not liable for delays caused by circumstances beyond our reasonable control, including courier delays or incorrect delivery information provided by the customer.",
     ],
   },
   {
@@ -45,37 +51,58 @@ const SECTIONS = [
     },
   },
   {
-    title: "6. Account Responsibilities",
+    title: "6. Refund Policy",
+    body: [
+      `Refunds are considered in the following situations:`,
+    ],
+    list: [
+      "Your order is cancelled before it has been dispatched.",
+      "The item you received is damaged, defective, or materially different from what was ordered.",
+      "The wrong item was delivered.",
+      "A warranty claim (see Section 5) is approved and a refund is agreed instead of a repair or replacement.",
+    ],
+    highlight: {
+      heading: "HOW REFUNDS WORK",
+      lines: [
+        "Request a refund by contacting support@sammytechgadgets.com or +234 703 878 4788 with your order number and reason.",
+        "We review your request and confirm eligibility, usually within 2 business days.",
+        "Approved refunds are processed within 3–5 business days via Paystack, back to your original payment method.",
+        "Depending on your bank, it can take up to 10 business days for the refund to reflect on your statement.",
+      ],
+    },
+  },
+  {
+    title: "7. Account Responsibilities",
     body: [
       `You are responsible for maintaining the confidentiality of your account password and for all activity under your account. Notify us immediately if you suspect unauthorized use of your account.`,
     ],
   },
   {
-    title: "7. Intellectual Property",
+    title: "8. Intellectual Property",
     body: [
       `All content on this site — including logos, product descriptions, and images — is the property of SammyTech or its licensors and may not be reproduced without permission.`,
     ],
   },
   {
-    title: "8. Limitation of Liability",
+    title: "9. Limitation of Liability",
     body: [
       `To the fullest extent permitted by law, SammyTech shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or services, beyond the value of the order in question.`,
     ],
   },
   {
-    title: "9. Governing Law",
+    title: "10. Governing Law",
     body: [
       `These terms are governed by the laws of the Federal Republic of Nigeria. Any disputes shall be subject to the exclusive jurisdiction of the courts of Nigeria.`,
     ],
   },
   {
-    title: "10. Changes to These Terms",
+    title: "11. Changes to These Terms",
     body: [
       `We may revise these Terms & Conditions from time to time. Continued use of our site after changes are posted constitutes your acceptance of the updated terms.`,
     ],
   },
   {
-    title: "11. Contact Us",
+    title: "12. Contact Us",
     body: [
       `Questions about these terms? Reach us at support@sammytechgadgets.com or +234 703 878 4788.`,
     ],

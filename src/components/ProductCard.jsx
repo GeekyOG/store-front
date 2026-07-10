@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { Package, Heart, ShoppingCart, Minus, Plus } from "lucide-react";
 import { addToCart, removeFromCart, updateQuantity, selectCartItems } from "../store/cartSlice";
 import { toggleWishlist, selectIsWishlisted } from "../store/wishlistSlice";
+import { productThumb } from "../utils/imageUrl";
 
 export default function ProductCard({ product }) {
   const dispatch = useDispatch();
@@ -14,8 +15,7 @@ export default function ProductCard({ product }) {
   const cartQty = cartItem?.quantity ?? 0;
   const wishlisted = useSelector(selectIsWishlisted(product.id));
 
-  const thumb =
-    product.featured_image || product.StorefrontImages?.[0]?.image_data;
+  const thumb = productThumb(product);
   const price = product.discount_price ?? product.regular_price;
   const hasDiscount = !!product.discount_price;
   const pct = hasDiscount
@@ -125,19 +125,21 @@ export default function ProductCard({ product }) {
           {product.display_name}
         </h3>
         <div className="flex items-center justify-between gap-2 mt-1">
-          <div className="flex items-baseline gap-1.5 min-w-0">
+          <div className="flex flex-wrap items-baseline gap-1.5 min-w-0">
             <span className="text-base font-bold text-primary-600">
               ₦{price?.toLocaleString()}
             </span>
             {hasDiscount && (
-              <span className="text-xs text-neutral-400 line-through">
+              <span className="text-[0.65rem] text-neutral-400 line-through">
                 ₦{product.regular_price?.toLocaleString()}
               </span>
             )}
           </div>
           {/* Cart button / quantity stepper */}
-          {cartQty > 0 && !hasVariants ? (
-            <div className="shrink-0 flex items-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700">
+         
+        </div>
+         {cartQty > 0 && !hasVariants ? (
+            <div className="shrink-0 flex items-center justify-center gap-1 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700">
               <button
                 onClick={decrement}
                 className="h-8 w-7 flex items-center justify-center hover:bg-emerald-100 rounded-l-xl transition-colors"
@@ -161,13 +163,14 @@ export default function ProductCard({ product }) {
             <button
               onClick={handleCart}
               disabled={!inStock}
-              className="shrink-0 h-8 w-8 rounded-xl flex items-center justify-center border transition-all disabled:opacity-40 disabled:cursor-not-allowed bg-primary-50 border-primary-100 text-primary-600 hover:bg-primary-100"
+              className="shrink-0 h-10 flex text-xs sm:text-md  gap-4 bg-red-600 rounded-md  items-center justify-center border transition-all disabled:opacity-40 disabled:cursor-not-allowed  border-primary-100 text-neutral-50 hover:bg-red"
               title={hasVariants ? "Select options" : "Add to cart"}
             >
+              <p>  Add To Cart</p>
+            
               <ShoppingCart size={14} />
             </button>
           )}
-        </div>
       </div>
     </Link>
   );
