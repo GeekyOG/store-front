@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronRight, Package, CreditCard, Truck,
   MapPin, Lock, AlertCircle, Tag, X, Check, Minus, Plus, Gift,
-  ShieldCheck, Clock,
+  ShieldCheck, Clock, Landmark, Store,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCartItems, selectCartTotal, clearCart, removeFromCart, updateQuantity } from "../store/cartSlice";
@@ -14,11 +14,24 @@ import {
 } from "../api/storefrontApi";
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
 
-const BANK = {
-  name: "SammyTech",
-  account: "0123456789",
-  bank: "First Bank Nigeria",
+const STORE_PICKUP = {
+  address: "Okorodafe Roundabout, Market Rd",
+  cityState: "Oteri 333105, Delta, Nigeria",
+  hours: "Mon–Sat, 9am–6pm",
 };
+
+const BANK_ACCOUNTS = [
+  {
+    name: "SAMMYYMOBILES TECH",
+    account: "5804954840",
+    bank: "Monie Point",
+  },
+  {
+    name: "Sammyymobiles Tech",
+    account: "1012783602",
+    bank: "Keystone Bank",
+  },
+];
 
 function Field({ label, error, required, children }) {
   return (
@@ -149,6 +162,8 @@ export default function Checkout() {
     notes:      "",
   });
   const [payment, setPayment] = useState("paystack");
+  const [deliveryMethod, setDeliveryMethod] = useState("delivery");
+  const isPickup = deliveryMethod === "pickup";
   const [errors,  setErrors]  = useState({});
   const [serverError, setServerError] = useState("");
   const [checkingStock, setCheckingStock] = useState(false);
@@ -203,7 +218,7 @@ export default function Checkout() {
   const referralAmount = useReferralBalance
     ? Math.max(0, Math.min(Number(referralAmountInput) || 0, maxReferralUsable))
     : 0;
-  const shippingFee = shippingFees?.find((f) => f.state === form.state)?.fee ?? 0;
+  const shippingFee = isPickup ? 0 : (shippingFees?.find((f) => f.state === form.state)?.fee ?? 0);
   const total = Math.max(subtotal - discountAmount - referralAmount + shippingFee, 0);
 
   const handleToggleReferralBalance = () => {
@@ -251,9 +266,11 @@ export default function Checkout() {
     if (!form.email.trim())      e.email      = "Required";
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Invalid email";
     if (!form.phone.trim())    e.phone    = "Required";
-    if (!form.address.trim())  e.address  = "Required";
-    if (!form.city.trim())     e.city     = "Required";
-    if (!form.state.trim())    e.state    = "Required";
+    if (!isPickup) {
+      if (!form.address.trim()) e.address = "Required";
+      if (!form.city.trim())    e.city    = "Required";
+      if (!form.state.trim())   e.state   = "Required";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -327,6 +344,7 @@ export default function Checkout() {
           state:   form.state.trim(),
         },
         payment_method: payment,
+        delivery_method: deliveryMethod,
         notes: form.notes.trim() || undefined,
         coupon_code: appliedPromo?.code || undefined,
         referral_amount: referralAmount > 0 ? referralAmount : undefined,
@@ -380,11 +398,70 @@ export default function Checkout() {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-5">
           {/* ── Left: form ────────────────────────────────────────────────── */}
           <div className="lg:col-span-3 space-y-6">
+            {/* Delivery Method */}
+            <div className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Truck size={16} className="text-primary-500" />
+                <h2 className="text-sm font-bold text-neutral-800">Delivery Method</h2>
+              </div>
+
+              {[
+                {
+                  value: "delivery",
+                  label: "Ship to Address",
+                  desc: "Delivered to your address",
+                  icon: Truck,
+                },
+                {
+                  value: "pickup",
+                  label: "Store Pickup",
+                  desc: "Collect from our store, free of charge",
+                  icon: Store,
+                },
+              ].map(({ value, label, desc, icon: Icon }) => (
+                <label
+                  key={value}
+                  className={`flex items-center gap-4 rounded-xl border-2 p-4 cursor-pointer transition-all ${
+                    deliveryMethod === value
+                      ? "border-primary-500 bg-primary-50"
+                      : "border-neutral-200 hover:border-neutral-300"
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="deliveryMethod"
+                    value={value}
+                    checked={deliveryMethod === value}
+                    onChange={() => setDeliveryMethod(value)}
+                    className="accent-primary-600"
+                  />
+                  <div className="h-9 w-9 rounded-xl bg-white border border-neutral-200 flex items-center justify-center shrink-0">
+                    <Icon size={16} className="text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-800">{label}</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{desc}</p>
+                  </div>
+                </label>
+              ))}
+
+              {isPickup && (
+                <div className="rounded-xl bg-primary-50 border border-primary-200 p-4 space-y-1">
+                  <p className="text-xs font-bold text-primary-800 uppercase tracking-wide">Pickup Location</p>
+                  <p className="text-sm text-primary-900">{STORE_PICKUP.address}</p>
+                  <p className="text-sm text-primary-900">{STORE_PICKUP.cityState}</p>
+                  <p className="text-xs text-primary-700 mt-2">Pickup hours: {STORE_PICKUP.hours}</p>
+                </div>
+              )}
+            </div>
+
             {/* Shipping */}
             <div className="bg-white rounded-2xl border border-neutral-200 p-6 space-y-4">
               <div className="flex items-center gap-2 mb-1">
                 <MapPin size={16} className="text-primary-500" />
-                <h2 className="text-sm font-bold text-neutral-800">Shipping Information</h2>
+                <h2 className="text-sm font-bold text-neutral-800">
+                  {isPickup ? "Contact Information" : "Shipping Information"}
+                </h2>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -405,23 +482,27 @@ export default function Checkout() {
                 </Field>
               </div>
 
-              <Field label="Delivery Address" error={errors.address} required>
-                <input value={form.address} onChange={set("address")} placeholder="123 Street Name" className={inputCls(errors.address)} />
-              </Field>
+              {!isPickup && (
+                <>
+                  <Field label="Delivery Address" error={errors.address} required>
+                    <input value={form.address} onChange={set("address")} placeholder="123 Street Name" className={inputCls(errors.address)} />
+                  </Field>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="City" error={errors.city} required>
-                  <input value={form.city} onChange={set("city")} placeholder="Lagos" className={inputCls(errors.city)} />
-                </Field>
-                <Field label="State" error={errors.state} required>
-                  <select value={form.state} onChange={set("state")} className={inputCls(errors.state)}>
-                    <option value="">Select state…</option>
-                    {NIGERIA_STATES.map((state) => (
-                      <option key={state} value={state}>{state}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <Field label="City" error={errors.city} required>
+                      <input value={form.city} onChange={set("city")} placeholder="Lagos" className={inputCls(errors.city)} />
+                    </Field>
+                    <Field label="State" error={errors.state} required>
+                      <select value={form.state} onChange={set("state")} className={inputCls(errors.state)}>
+                        <option value="">Select state…</option>
+                        {NIGERIA_STATES.map((state) => (
+                          <option key={state} value={state}>{state}</option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                </>
+              )}
 
               <Field label="Order Notes (optional)">
                 <textarea
@@ -448,7 +529,12 @@ export default function Checkout() {
                   desc: "Secure card payment via Paystack",
                   icon: CreditCard,
                 },
-                
+                {
+                  value: "bank_transfer",
+                  label: "Bank Transfer",
+                  desc: "Transfer directly to our bank account",
+                  icon: Landmark,
+                },
               ].map(({ value, label, desc, icon: Icon }) => (
                 <label
                   key={value}
@@ -477,13 +563,17 @@ export default function Checkout() {
               ))}
 
               {payment === "bank_transfer" && (
-                <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-1.5">
+                <div className="rounded-xl bg-amber-50 border border-amber-200 p-4 space-y-3">
                   <p className="text-xs font-bold text-amber-800 uppercase tracking-wide">Bank Details</p>
-                  <p className="text-sm text-amber-900"><span className="font-semibold">Account Name:</span> {BANK.name}</p>
-                  <p className="text-sm text-amber-900"><span className="font-semibold">Account Number:</span> {BANK.account}</p>
-                  <p className="text-sm text-amber-900"><span className="font-semibold">Bank:</span> {BANK.bank}</p>
+                  {BANK_ACCOUNTS.map((acct) => (
+                    <div key={acct.account} className="space-y-1 border-b border-amber-200 last:border-b-0 pb-3 last:pb-0">
+                      <p className="text-sm text-amber-900"><span className="font-semibold">Account Name:</span> {acct.name}</p>
+                      <p className="text-sm text-amber-900"><span className="font-semibold">Account Number:</span> {acct.account}</p>
+                      <p className="text-sm text-amber-900"><span className="font-semibold">Bank:</span> {acct.bank}</p>
+                    </div>
+                  ))}
                   <p className="text-xs text-amber-700 mt-2">
-                    Transfer ₦{total.toLocaleString()} and use your order number as reference.
+                    Transfer ₦{total.toLocaleString()} to either account above and use your order number as reference.
                   </p>
                 </div>
               )}
@@ -635,8 +725,10 @@ export default function Checkout() {
                   </div>
                 )}
                 <div className="flex justify-between text-neutral-600">
-                  <span>Shipping{form.state ? ` (${form.state})` : ""}</span>
-                  {shippingFee > 0 ? (
+                  <span>{isPickup ? "Delivery" : `Shipping${form.state ? ` (${form.state})` : ""}`}</span>
+                  {isPickup ? (
+                    <span className="text-emerald-600 font-medium">Store Pickup</span>
+                  ) : shippingFee > 0 ? (
                     <span>₦{shippingFee.toLocaleString()}</span>
                   ) : (
                     <span className="text-emerald-600 font-medium">

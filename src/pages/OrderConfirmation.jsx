@@ -198,8 +198,14 @@ export default function OrderConfirmation() {
               <span>₦{order.subtotal?.toLocaleString()}</span>
             </div>
             <div className="flex justify-between text-neutral-600">
-              <span>Shipping</span>
-              <span className="text-emerald-600 font-medium">Free</span>
+              <span>{order.delivery_method === "pickup" ? "Delivery" : "Shipping"}</span>
+              {order.delivery_method === "pickup" || !(order.shipping_fee > 0) ? (
+                <span className="text-emerald-600 font-medium">
+                  {order.delivery_method === "pickup" ? "Store Pickup" : "Free"}
+                </span>
+              ) : (
+                <span>₦{order.shipping_fee.toLocaleString()}</span>
+              )}
             </div>
             <div className="flex justify-between font-bold text-neutral-800 text-base">
               <span>Total</span>
@@ -212,15 +218,22 @@ export default function OrderConfirmation() {
         <div className="bg-white rounded-2xl border border-neutral-200 p-5">
           <h2 className="text-sm font-bold text-neutral-800 mb-3 flex items-center gap-2">
             <MapPin size={15} className="text-primary-500" />
-            Shipping To
+            {order.delivery_method === "pickup" ? "Store Pickup" : "Shipping To"}
           </h2>
           <p className="text-sm font-semibold text-neutral-800">{order.shipping_name}</p>
           <p className="text-sm text-neutral-500 mt-0.5">{order.shipping_email}</p>
           <p className="text-sm text-neutral-500">{order.shipping_phone}</p>
-          <p className="text-sm text-neutral-500 mt-2">
-            {order.shipping_address}<br />
-            {order.shipping_city}, {order.shipping_state}
-          </p>
+          {order.delivery_method === "pickup" ? (
+            <p className="text-sm text-neutral-500 mt-2">
+              Collect from: {order.shipping_address}<br />
+              {order.shipping_city}, {order.shipping_state}
+            </p>
+          ) : (
+            <p className="text-sm text-neutral-500 mt-2">
+              {order.shipping_address}<br />
+              {order.shipping_city}, {order.shipping_state}
+            </p>
+          )}
           {order.notes && (
             <p className="text-xs text-neutral-400 italic mt-2">Note: {order.notes}</p>
           )}

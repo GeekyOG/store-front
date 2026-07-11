@@ -121,8 +121,8 @@ export default function ProductCard({ product }) {
             {product.Subcategory && ` · ${product.Subcategory.name}`}
           </span>
         )}
-        <h3 className="text-sm font-semibold text-neutral-700 line-clamp-2 leading-snug">
-          {product.display_name}
+        <h3 className="text-[0.65rem] sm:text-sm font-semibold text-neutral-700 line-clamp-2 leading-snug">
+          {product.display_name?.slice(0, 18)}{product.display_name.length > 18 && "..."}
         </h3>
         <div className="flex items-center justify-between gap-2 mt-1">
           <div className="flex flex-wrap items-baseline gap-1.5 min-w-0">

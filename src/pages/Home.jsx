@@ -109,7 +109,7 @@ function CategorySidebar({ categories }) {
                 className="flex items-center gap-2.5 px-4 py-3 text-sm text-neutral-600 hover:bg-neutral-50 hover:text-primary-600 transition-colors"
               >
                 <Tag size={15} className="text-neutral-300 shrink-0" />
-                <span className="truncate">{cat.name}</span>
+                <span className="truncate font-bold">{cat.name}</span>
               </Link>
             </li>
           ))}
@@ -503,11 +503,32 @@ function SupportModal({ onClose }) {
 
           <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
             {[
-              { Icon: Mail, title: "Email", label: "24hr reply" },
-              { Icon: Phone, title: "Call Us", label: "Mon–Sat 9–6" },
-              { Icon: MessageCircle, title: "WhatsApp", label: "Chat now" },
-            ].map(({ Icon, title, label }) => (
-              <div key={title} className="flex flex-1 flex-col items-center gap-1 px-1">
+              {
+                Icon: Mail,
+                title: "Email",
+                label: "24hr reply",
+                href: "mailto:support@sammytechgadgets.com",
+              },
+              {
+                Icon: Phone,
+                title: "Call Us",
+                label: "Mon–Sat 9–6",
+                href: "tel:+2347038784788",
+              },
+              {
+                Icon: MessageCircle,
+                title: "WhatsApp",
+                label: "Chat now",
+                href: "https://wa.me/+2347038784788?text=Hello%20SammyTech",
+                external: true,
+              },
+            ].map(({ Icon, title, label, href, external }) => (
+              <a
+                key={title}
+                href={href}
+                {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                className="flex flex-1 flex-col items-center gap-1 px-1 rounded-lg py-1.5 transition-colors hover:bg-neutral-50"
+              >
                 <Icon size={18} style={{ color: "#f59e0b" }} />
                 <span className="text-[11px] font-bold text-neutral-700 leading-tight text-center">
                   {title}
@@ -515,7 +536,7 @@ function SupportModal({ onClose }) {
                 <span className="text-[10px] text-neutral-400 leading-tight text-center">
                   {label}
                 </span>
-              </div>
+              </a>
             ))}
           </div>
 
@@ -593,6 +614,30 @@ export default function Home() {
 
   return (
     <div>
+        {/* ── Feature Badges ────────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-7xl px-4 mt-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-neutral-100 rounded-2xl border border-neutral-200 bg-white shadow-sm">
+          {FEATURE_BADGES.map((feature) => {
+            const { Icon, title, desc } = feature;
+            return (
+              <button
+                key={title}
+                type="button"
+                onClick={() => setActiveFeature(feature)}
+                className="flex items-center gap-3 px-4 py-3.5 text-left hover:bg-neutral-50 transition-colors"
+              >
+                <Icon size={22} className="shrink-0 text-primary-600" />
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-neutral-800 truncate">
+                    {title}
+                  </p>
+                  <p className="text-[10px] text-neutral-400 truncate">{desc}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
       {/* ── Promo Banner ──────────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 py-4 lg:py-6">
         <div className="flex items-stretch gap-4">
@@ -629,30 +674,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Feature Badges ────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-4 mt-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-neutral-100 rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          {FEATURE_BADGES.map((feature) => {
-            const { Icon, title, desc } = feature;
-            return (
-              <button
-                key={title}
-                type="button"
-                onClick={() => setActiveFeature(feature)}
-                className="flex items-center gap-3 px-4 py-3.5 text-left hover:bg-neutral-50 transition-colors"
-              >
-                <Icon size={22} className="shrink-0 text-primary-600" />
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold text-neutral-800 truncate">
-                    {title}
-                  </p>
-                  <p className="text-[10px] text-neutral-400 truncate">{desc}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+    
 
       {activeFeature && activeFeature.title === "Fast Delivery" && (
         <FastDeliveryModal onClose={() => setActiveFeature(null)} />
@@ -688,10 +710,13 @@ export default function Home() {
       <div className="mx-auto max-w-7xl px-4 mt-8">
         <Link
           to="/swap"
-          className="relative flex items-center gap-4 overflow-hidden justify-center rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-primary-700 px-5 py-6 text-white sm:px-10 sm:py-7"
+        
+          // className="relative flex items-center gap-4 overflow-hidden justify-center rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-primary-700 px-5 py-6 text-white sm:px-10 sm:py-7"
         >
+          <img src="/swap-desktop.jpg" className="hidden md:block border round-sm"/>
+          <img src="/swap.jpeg" className="md:hidden border round-sm"/>
           {/* Decorative phone stack, faded into the background */}
-          <div className="hidden items-center justify-center gap-1 w-[250px] md:w-[300px] sm:flex">
+          {/* <div className="hidden items-center justify-center gap-1 w-[250px] md:w-[300px] sm:flex">
             <img src="/phones.png" className="absolute bottom-0 w-[250px] md:w-[300px]"/>
           </div>
 
@@ -707,7 +732,7 @@ export default function Home() {
             <span className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-primary-700 shadow-md transition-colors hover:bg-primary-50">
               <Smartphone size={15} /> Swap Your Phone <ChevronRight size={15} />
             </span>
-          </div>
+          </div> */}
         </Link>
       </div>
 
