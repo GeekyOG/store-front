@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   Package,
@@ -16,6 +16,8 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { useGetPublicProductQuery, useAddReviewMutation, useGetMyOrdersQuery } from "../api/storefrontApi";
 import { addToCart, selectCartItems } from "../store/cartSlice";
+import { resolveVariantPrice } from "../utils/variantPricing";
+import { getVariantStockCount } from "../utils/variantStock";
 import { toggleWishlist, selectIsWishlisted } from "../store/wishlistSlice";
 import { selectCurrentCustomer } from "../store/authSlice";
 import { resolveImageUrl } from "../utils/imageUrl";
@@ -55,9 +57,20 @@ export default function ProductDetail() {
   const { data: myOrdersData } = useGetMyOrdersQuery(undefined, { skip: !customer });
   const [addReview, { isLoading: submittingReview }] = useAddReviewMutation();
 
+  // Hoisted above the early returns (and paired with the effect below) so
+  // the quantity stepper's max stays in sync as the customer switches
+  // between variants with different unit counts. API returns only
+  // available serials (where: { status: "available" }), so a filtered
+  // length is exactly the stock for that combination.
+  const stockCount = getVariantStockCount(product, selectedOptions);
+  const maxQty = Math.min(stockCount, 99);
+  useEffect(() => {
+    setQty((q) => Math.min(Math.max(q, 1), Math.max(maxQty, 1)));
+  }, [maxQty]);
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-32">
+      <div className="bg-neutral-100 flex items-center justify-center py-32">
         <div className="h-8 w-8 rounded-full border-2 border-neutral-200 border-t-primary-500 animate-spin" />
       </div>
     );
@@ -65,7 +78,7 @@ export default function ProductDetail() {
 
   if (!product) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 gap-3">
+      <div className="bg-neutral-100 flex flex-col items-center justify-center py-32 gap-3">
         <p className="text-neutral-500">Product not found</p>
         <Link
           to="/products"
@@ -81,17 +94,15 @@ export default function ProductDetail() {
     ...(product.has_featured_image ? [{ url: product.featured_image_url }] : []),
     ...(product.StorefrontImages ?? []),
   ];
-  const price = product.discount_price ?? product.regular_price;
-  const hasDiscount = !!product.discount_price;
+  // A selected variant option with its own price overrides the product's
+  // regular/discount price entirely (it's an absolute price, not a delta).
+  const variantPrice = resolveVariantPrice(product, selectedOptions);
+  const price = variantPrice ?? (product.discount_price ?? product.regular_price);
+  const hasDiscount = variantPrice == null && !!product.discount_price;
   const discountPct = hasDiscount
     ? Math.round((1 - product.discount_price / product.regular_price) * 100)
     : 0;
-  // API returns only available serials (where: { status: "available" }), so length == available stock.
-  const stockCount = product.is_serialized
-    ? (product.StorefrontSerialNumbers?.length ?? 0)
-    : (product.online_quantity ?? 0);
   const inStock = stockCount > 0;
-  const maxQty = Math.min(stockCount, 99);
 
   // Check if this exact variant combo is already in cart
   const optKey = JSON.stringify(selectedOptions);
@@ -159,7 +170,7 @@ export default function ProductDetail() {
   const whatsappHref = `https://wa.me/2347038784788?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
-    <div>
+    <div >
       <main className="mx-auto max-w-7xl px-4 py-8">
         {/* Breadcrumb */}
         <div className="flex items-center gap-1 text-xs text-neutral-400 mb-6">
@@ -276,29 +287,31 @@ export default function ProductDetail() {
             {/* Variants */}
             {selectableVariants.map((variant) => (
               <div key={variant.id}>
-                <p className="mb-2 text-sm font-semibold text-neutral-700">
-                  {variant.name}
-                  {selectedOptions[variant.name] && (
-                    <span className="ml-2 font-normal text-neutral-400">
-                      — {selectedOptions[variant.name]}
-                    </span>
-                  )}
+                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-neutral-500">
+                  Choose a {variant.name}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {variant.StorefrontVariantOptions.map((opt) => {
-                    const isSelected =
-                      selectedOptions[variant.name] === opt.value;
+                    const isSelected = selectedOptions[variant.name] === opt.value;
+                    const optPrice = opt.price != null ? Number(opt.price) : null;
                     return (
                       <button
                         key={opt.id}
                         onClick={() => selectOption(variant.name, opt.value)}
-                        className={`rounded-xl border px-3.5 py-1.5 text-sm font-medium transition-all ${
+                        className={`flex flex-col items-start rounded-xl border-2 px-4 py-2 text-left transition-all ${
                           isSelected
-                            ? "border-primary-500 bg-primary-50 text-primary-700"
-                            : "border-neutral-200 text-neutral-600 hover:border-neutral-300"
+                            ? "border-red-500 bg-red-50"
+                            : "border-neutral-200 hover:border-neutral-300"
                         }`}
                       >
-                        {opt.value}
+                        <span className={`text-sm font-bold ${isSelected ? "text-red-600" : "text-neutral-800"}`}>
+                          {opt.value}
+                        </span>
+                        {optPrice != null && (
+                          <span className="text-xs text-neutral-400">
+                            ₦{optPrice.toLocaleString()}
+                          </span>
+                        )}
                       </button>
                     );
                   })}

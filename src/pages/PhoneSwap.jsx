@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { RefreshCw, Smartphone, BatteryCharging, Sparkles, CheckCircle2, ArrowRight } from "lucide-react";
+import { RefreshCw, Smartphone, BatteryCharging, Sparkles, CheckCircle2, ArrowRight, X } from "lucide-react";
 import {
   useGetSwapModelsQuery,
   useGetSwapTargetProductsQuery,
@@ -18,6 +18,65 @@ function modelLabel(m) {
 
 function formatNaira(n) {
   return `₦${Number(n).toLocaleString()}`;
+}
+
+function SwapResultModal({ result, onClose }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl bg-white shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          onClick={onClose}
+          aria-label="Close"
+          className="absolute right-3 top-3 rounded-lg p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+        >
+          <X size={16} />
+        </button>
+
+        <div className="p-6 sm:p-8 text-center space-y-5">
+          {result.toProduct ? (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary-500">
+                Estimated top-up for {result.toProduct.display_name}
+              </p>
+              <p className="mt-1 text-xl font-bold text-neutral-800">
+                {result.topUpRange.max <= 0
+                  ? "No top-up needed"
+                  : `${formatNaira(Math.max(0, result.topUpRange.min))} - ${formatNaira(Math.max(0, result.topUpRange.max))}`}
+              </p>
+              <p className="mt-1 text-xs text-neutral-400">
+                Market value {formatNaira(result.toProduct.regular_price)} minus your trade-in value
+              </p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-primary-500">
+                Estimated trade-in value for your {result.fromModel.brand} {result.fromModel.model_name}
+              </p>
+              <p className="mt-1 text-xl font-bold text-neutral-800">
+                {formatNaira(result.valueRange.min)} - {formatNaira(result.valueRange.max)}
+              </p>
+            </div>
+          )}
+
+          <p className="text-xs text-neutral-400 max-w-md mx-auto">
+            This is an estimate — final value is confirmed after a quick physical inspection.
+          </p>
+          <Link
+            to="/contact"
+            className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white hover:bg-primary-700 transition-colors"
+          >
+            Book your swap or Sale <ArrowRight size={16} />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function PhoneSwap() {
@@ -183,7 +242,7 @@ export default function PhoneSwap() {
             disabled={!canSubmit || quoting}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {quoting ? "Calculating…" : "Get Swap Value"} <ArrowRight size={16} />
+            {quoting ? "Calculating…" : "Get Swap or Sale Value"} <ArrowRight size={16} />
           </button>
         </form>
 
@@ -197,38 +256,9 @@ export default function PhoneSwap() {
           </div>
         )}
 
-        {result && (
-          <div className="rounded-2xl border border-primary-200 bg-primary-50/50 p-6 sm:p-8 text-center space-y-5">
-          
-
-            {result.toProduct && (
-              <div className="border-t border-primary-100 pt-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-primary-500">
-                  Estimated top-up for {result.toProduct.display_name}
-                </p>
-                <p className="mt-1 text-xl font-bold text-neutral-800">
-                  {result.topUpRange.max <= 0
-                    ? "No top-up needed"
-                    : `${formatNaira(Math.max(0, result.topUpRange.min))} - ${formatNaira(Math.max(0, result.topUpRange.max))}`}
-                </p>
-                <p className="mt-1 text-xs text-neutral-400">
-                  Market value {formatNaira(result.toProduct.regular_price)} minus your trade-in value
-                </p>
-              </div>
-            )}
-
-            <p className="text-xs text-neutral-400 max-w-md mx-auto">
-              This is an estimate — final value is confirmed after a quick physical inspection.
-            </p>
-            <Link
-              to="/contact"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white hover:bg-primary-700 transition-colors"
-            >
-              Book your swap <ArrowRight size={16} />
-            </Link>
-          </div>
-        )}
       </div>
+
+      {result && <SwapResultModal result={result} onClose={() => setResult(null)} />}
     </div>
   );
 }

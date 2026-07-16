@@ -13,6 +13,7 @@ import {
   useInitializePaystackPaymentMutation, useGetMeQuery, storefrontApi,
 } from "../api/storefrontApi";
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
+import { getVariantStockCount } from "../utils/variantStock";
 
 const STORE_PICKUP = {
   address: "Okorodafe Roundabout, Market Rd",
@@ -299,9 +300,7 @@ export default function Checkout() {
     for (const item of items) {
       const product = productsById.get(item.id);
       if (!product) continue;
-      const available = product.is_serialized
-        ? (product.StorefrontSerialNumbers?.length ?? 0)
-        : (product.online_quantity ?? 0);
+      const available = getVariantStockCount(product, item.selectedOptions);
       if (item.quantity > available) {
         if (available <= 0) {
           dispatch(removeFromCart({ id: item.id, optKey: item.optKey }));

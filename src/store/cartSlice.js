@@ -1,5 +1,7 @@
 import { createSlice, current } from "@reduxjs/toolkit";
 import { productThumb } from "../utils/imageUrl";
+import { resolveVariantPrice } from "../utils/variantPricing";
+import { getVariantStockCount } from "../utils/variantStock";
 
 const KEY = "sf_cart";
 
@@ -24,10 +26,11 @@ const cartSlice = createSlice({
     addToCart: (state, { payload }) => {
       const { product, selectedOptions = {}, quantity = 1 } = payload;
       const optKey = JSON.stringify(selectedOptions);
-      const price = product.discount_price ?? product.regular_price;
-      // Serialized products: each entry in StorefrontSerialNumbers is one available unit.
+      const variantPrice = resolveVariantPrice(product, selectedOptions);
+      const price = variantPrice ?? (product.discount_price ?? product.regular_price);
+      // Serialized products: only serials tagged with this exact combination count.
       const maxQty = product.is_serialized
-        ? (product.StorefrontSerialNumbers?.length ?? 1)
+        ? getVariantStockCount(product, selectedOptions)
         : (product.online_quantity ?? 99);
       const existing = state.items.find(
         (i) => i.id === product.id && i.optKey === optKey

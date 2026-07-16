@@ -349,7 +349,7 @@ export default function Layout() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-100 font-sans flex flex-col pb-16 sm:pb-0">
+    <div className="min-h-screen font-sans flex flex-col pb-16 sm:pb-0">
       <ScrollToTop />
       {showWelcomePopup && <WelcomeDiscountModal onClose={dismissWelcomePopup} />}
         <div className="border-t border-white/10 bg-primary-600 py-2.5">

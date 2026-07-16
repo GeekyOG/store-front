@@ -4,7 +4,7 @@ import { Clock, Package, AlertCircle } from "lucide-react";
 
 const TABS = [
   { id: "description", label: "Description" },
-  { id: "specs", label: "Specs" },
+  // { id: "specs", label: "Specs" },
   { id: "warranty", label: "Warranty" },
 ];
 
