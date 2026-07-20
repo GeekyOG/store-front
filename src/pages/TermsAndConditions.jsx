@@ -1,110 +1,115 @@
 import { Link } from "react-router-dom";
 import { FileText, ChevronRight, ShieldAlert } from "lucide-react";
 
-const LAST_UPDATED = "July 10, 2026";
+const LAST_UPDATED = "July 20, 2026";
 
 const SECTIONS = [
   {
     title: "1. Acceptance of Terms",
     body: [
-      `These Terms & Conditions govern your use of the SammyTech website and your purchase of any products from us. By accessing our site or placing an order, you agree to be bound by these terms. If you do not agree, please do not use our services.`,
+      `These Terms & Conditions govern your use of the SammyTech Gadgets website and your purchase of any products from us. By accessing our website or placing an order, you agree to be bound by these Terms & Conditions. If you do not agree with any part of these terms, please do not use our website or services.`,
     ],
   },
   {
     title: "2. Products & Pricing",
     body: [
-      `We make every effort to display accurate product descriptions, images, and prices. However, errors may occasionally occur. If we discover a pricing or listing error after you've placed an order, we will contact you before proceeding, and you may choose to cancel.`,
+      `We strive to ensure that all product descriptions, images, specifications, and prices displayed on our website are accurate and up to date. However, errors may occasionally occur.`,
+      `If a pricing or product listing error is identified after you have placed an order, we will notify you before processing your order. You may choose to proceed with the corrected information or cancel your order for a full refund.`,
     ],
   },
   {
     title: "3. Orders & Payment",
+    body: [
+      `An order is considered confirmed once payment has been successfully received or, for approved Pay-on-Delivery orders, once SammyTech Gadgets accepts the order.`,
+    ],
     list: [
-      "An order is confirmed once payment is received or, for pay-on-delivery orders, once we accept your order.",
-      "We reserve the right to refuse or cancel any order due to stock unavailability, suspected fraud, or pricing errors.",
-      "Prices are listed in Nigerian Naira (₦) and are inclusive of applicable taxes unless stated otherwise.",
+      "Order cancellation: we reserve the right to decline or cancel any order due to stock unavailability, pricing or listing errors, suspected fraudulent activity, or any other legitimate business reason.",
+      "Pricing: all prices are displayed in Nigerian Naira (₦) and include applicable taxes unless otherwise stated.",
     ],
   },
   {
     title: "4. Delivery Policy",
     body: [
-      `We deliver nationwide across Nigeria through trusted courier and dispatch rider partners.`,
+      `We deliver nationwide across Nigeria through trusted courier and dispatch partners.`,
     ],
     list: [
-      "Delivery timelines: within Delta State, orders typically arrive within 24 hours. Everywhere else in Nigeria, delivery takes 24–72 hours depending on your location.",
-      "Delivery coverage: we ship to every state in Nigeria. Remote areas may take slightly longer than the estimates above.",
-      "Delivery charges: your shipping fee is calculated automatically based on the delivery state you select at checkout and is shown in full before you pay — no hidden charges.",
-      "Delivery timeframes are estimates, not guarantees. SammyTech is not liable for delays caused by circumstances beyond our reasonable control, including courier delays or incorrect delivery information provided by the customer.",
+      "Delivery time: within Delta State, orders typically arrive within 24 hours. In other states, delivery takes 24–72 hours depending on your location.",
+      "Delivery coverage: we deliver to all 36 states and the FCT. Delivery to remote locations may take longer than the estimated timeframe.",
+      "Delivery charges: shipping fees are automatically calculated during checkout based on your delivery location, and the total delivery cost is displayed before payment.",
+      "Delivery delays: delivery timelines are estimates only. SammyTech Gadgets is not responsible for delays caused by courier services, weather conditions, public holidays, security issues, or incorrect delivery information provided by the customer.",
     ],
   },
   {
     title: "5. Returns & Warranty Policy",
     body: [
-      `We want you to be confident in every purchase. If a product develops a fault under normal use within the applicable warranty period below, contact us for a repair, replacement, or refund at our discretion.`,
+      `Your satisfaction is important to us. If an eligible product develops a manufacturer-related fault during the warranty period under normal use, please contact our support team for assistance.`,
+      `Warranty exclusions: physical or accidental damage, cracked or broken screens, liquid or water damage, fire or power surge damage, software issues caused by rooting or jailbreaking, unauthorized repairs or modifications, and damage caused by misuse, negligence, or improper handling.`,
+      `SammyTech Gadgets reserves the right to repair, replace, or refund eligible products after inspection.`,
     ],
     highlight: {
-      heading: "WARRANTY POLICY",
+      heading: "WARRANTY COVERAGE",
       lines: [
-        "14 Days for UK Used Phones",
-        "30 Days for Brand New Phones",
-        "No warranty covers liquid damage or screen damage.",
+        "Brand New Phones: 30-Day Limited Warranty",
+        "UK Used Phones: 14-Day Limited Warranty",
+        "Covers manufacturer-related hardware defects under normal usage only.",
       ],
     },
   },
   {
     title: "6. Refund Policy",
     body: [
-      `Refunds are considered in the following situations:`,
+      `Refunds may be approved under the following circumstances:`,
     ],
     list: [
-      "Your order is cancelled before it has been dispatched.",
-      "The item you received is damaged, defective, or materially different from what was ordered.",
-      "The wrong item was delivered.",
-      "A warranty claim (see Section 5) is approved and a refund is agreed instead of a repair or replacement.",
+      "Your order is cancelled before dispatch.",
+      "You receive the wrong product.",
+      "The item received is damaged or defective.",
+      "A warranty claim (see Section 5) is approved and a refund is offered instead of a repair or replacement.",
     ],
     highlight: {
       heading: "HOW REFUNDS WORK",
       lines: [
-        "Request a refund by contacting support@sammytechgadgets.com or +234 703 878 4788 with your order number and reason.",
-        "We review your request and confirm eligibility, usually within 2 business days.",
-        "Approved refunds are processed within 3–5 business days via Paystack, back to your original payment method.",
-        "Depending on your bank, it can take up to 10 business days for the refund to reflect on your statement.",
+        "Contact us at support@sammytechgadgets.com or +234 703 878 4788 with your order number and reason for the request.",
+        "Refund requests are reviewed within 2 business days.",
+        "Approved refunds are processed within 3–5 business days via your original payment method.",
+        "Depending on your bank, refunds may take up to 10 business days to appear.",
       ],
     },
   },
   {
     title: "7. Account Responsibilities",
     body: [
-      `You are responsible for maintaining the confidentiality of your account password and for all activity under your account. Notify us immediately if you suspect unauthorized use of your account.`,
+      `You are responsible for maintaining the confidentiality of your account credentials and for all activities carried out under your account. Please notify us immediately if you suspect unauthorized access or use of your account.`,
     ],
   },
   {
     title: "8. Intellectual Property",
     body: [
-      `All content on this site — including logos, product descriptions, and images — is the property of SammyTech or its licensors and may not be reproduced without permission.`,
+      `All website content, including logos, text, product descriptions, graphics, images, and other materials, is the intellectual property of SammyTech Gadgets or its licensors and may not be copied, reproduced, distributed, or used without prior written permission.`,
     ],
   },
   {
     title: "9. Limitation of Liability",
     body: [
-      `To the fullest extent permitted by law, SammyTech shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or services, beyond the value of the order in question.`,
+      `To the fullest extent permitted by Nigerian law, SammyTech Gadgets shall not be liable for any indirect, incidental, special, or consequential damages arising from the use of our products or services. Our total liability shall not exceed the amount paid for the affected order.`,
     ],
   },
   {
     title: "10. Governing Law",
     body: [
-      `These terms are governed by the laws of the Federal Republic of Nigeria. Any disputes shall be subject to the exclusive jurisdiction of the courts of Nigeria.`,
+      `These Terms & Conditions shall be governed by and interpreted in accordance with the laws of the Federal Republic of Nigeria. Any disputes arising from these terms shall be subject to the exclusive jurisdiction of the courts of Nigeria.`,
     ],
   },
   {
     title: "11. Changes to These Terms",
     body: [
-      `We may revise these Terms & Conditions from time to time. Continued use of our site after changes are posted constitutes your acceptance of the updated terms.`,
+      `SammyTech Gadgets reserves the right to update or modify these Terms & Conditions at any time. Changes become effective immediately upon publication on our website. Continued use of our website constitutes acceptance of the revised Terms & Conditions.`,
     ],
   },
   {
     title: "12. Contact Us",
     body: [
-      `Questions about these terms? Reach us at support@sammytechgadgets.com or +234 703 878 4788.`,
+      `If you have any questions regarding these Terms & Conditions, please contact us at support@sammytechgadgets.com or +234 703 878 4788.`,
     ],
   },
 ];

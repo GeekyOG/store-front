@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ChevronRight, Package, CreditCard, Truck,
   MapPin, Lock, AlertCircle, Tag, X, Check, Minus, Plus, Gift,
-  ShieldCheck, Clock, Landmark, Store,
+  ShieldCheck, Clock, Landmark, Store, AlertTriangle, XCircle, Headphones,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { selectCartItems, selectCartTotal, clearCart, removeFromCart, updateQuantity } from "../store/cartSlice";
@@ -46,14 +46,45 @@ function Field({ label, error, required, children }) {
   );
 }
 
+const WARRANTY_TIERS = [
+  {
+    Icon: Clock,
+    color: "#dc2626",
+    bg: "#dc262618",
+    title: "14-Day Warranty",
+    desc: "Coverage for manufacturer defects on UK used phones.",
+  },
+  {
+    Icon: ShieldCheck,
+    color: "#10b981",
+    bg: "#10b98118",
+    title: "30-Day Warranty",
+    desc: "Coverage for manufacturer defects on brand new phones.",
+  },
+  {
+    Icon: AlertTriangle,
+    color: "#f59e0b",
+    bg: "#f59e0b18",
+    title: "Physical & Liquid Damage Not Covered",
+    desc: "Cracked screens, water damage and accidental damage are not covered.",
+  },
+];
+
+const WARRANTY_EXCLUSIONS = [
+  "Accidental drops or falls",
+  "Water or liquid damage",
+  "Unauthorized repairs",
+  "Damage caused by power surges",
+];
+
 function WarrantyModal({ onClose }) {
   return (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-6 overflow-y-auto"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-sm rounded-2xl bg-white shadow-2xl overflow-hidden"
+        className="relative w-full max-w-md my-auto rounded-2xl bg-white shadow-2xl overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -64,51 +95,80 @@ function WarrantyModal({ onClose }) {
           <X size={16} />
         </button>
 
-        <div className="px-7 pt-9 pb-7 text-center">
-          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#10b98118]">
-            <ShieldCheck size={26} style={{ color: "#10b981" }} />
+        <div className="px-6 pt-8 pb-6 text-center">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#dc262618]">
+            <ShieldCheck size={26} style={{ color: "#dc2626" }} />
           </div>
 
-          <h2 className="flex items-center justify-center gap-2 text-lg font-extrabold text-neutral-800">
-            <span>🛡️</span> Warranty Policy
+          <h2 className="text-xl font-extrabold tracking-tight">
+            <span className="text-neutral-900">WARRANTY</span>{" "}
+            <span className="text-red-600">POLICY</span>
           </h2>
+          <div className="mx-auto mt-2 h-0.5 w-10 rounded-full bg-red-600" />
 
-          <p className="mt-4 text-sm text-neutral-600 leading-relaxed">
-            Every order is covered. If a product develops a fault under
-            normal use within its warranty period, contact us for a repair,
-            replacement, or refund at our discretion.
+          <p className="mt-4 text-sm text-neutral-500 leading-relaxed">
+            Shop with confidence. Every eligible purchase from SammyTech
+            Gadgets is backed by our limited warranty for your peace of mind.
+            If your device develops a manufacturer-related fault under normal
+            use during the warranty period, we'll inspect it and provide a
+            repair, replacement, or other appropriate solution in line with
+            our warranty policy.
           </p>
 
-          <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
-            {[
-              { Icon: Clock, label: "14 Days — UK-Used Phones" },
-              { Icon: Package, label: "30 Days — Brand New Phones" },
-              { Icon: AlertCircle, label: "Excludes Liquid & Screen Damage" },
-            ].map(({ Icon, label }) => (
+          <div className="mt-5 grid grid-cols-3 gap-2">
+            {WARRANTY_TIERS.map(({ Icon, color, bg, title, desc }) => (
               <div
-                key={label}
-                className="flex flex-1 flex-col items-center gap-1.5 px-1"
+                key={title}
+                className="flex flex-col items-center gap-1.5 rounded-xl bg-neutral-50 px-2 py-3"
               >
-                <Icon size={18} style={{ color: "#10b981" }} />
-                <span className="text-[11px] font-medium text-neutral-600 leading-tight text-center">
+                <div
+                  className="flex h-9 w-9 items-center justify-center rounded-full"
+                  style={{ background: bg }}
+                >
+                  <Icon size={16} style={{ color }} />
+                </div>
+                <p className="text-[10px] font-extrabold uppercase leading-tight text-neutral-800">
+                  {title}
+                </p>
+                <p className="text-[9px] leading-tight text-neutral-500">
+                  {desc}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-neutral-200 px-4 py-3 text-left">
+            {WARRANTY_EXCLUSIONS.map((label) => (
+              <div key={label} className="flex items-start gap-1.5">
+                <XCircle size={14} className="mt-0.5 shrink-0 text-red-500" />
+                <span className="text-[11px] leading-tight text-neutral-600">
                   {label}
                 </span>
               </div>
             ))}
           </div>
 
+          <p className="mt-4 text-xs text-neutral-500 leading-relaxed">
+            Please contact us immediately for any warranty-related issues.
+          </p>
+
+          <div className="mt-2 flex items-center justify-center gap-1.5 text-xs font-medium text-neutral-500">
+            <Headphones size={13} className="text-neutral-400" />
+            Support Hours: Mon – Sat, 9:00 AM – 6:00 PM
+          </div>
+
           <button
             type="button"
             onClick={onClose}
-            className="mt-6 w-full rounded-xl py-3 text-sm font-bold text-white shadow-md transition-opacity hover:opacity-90"
-            style={{ background: "#10b981" }}
+            className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-red-600 py-3.5 text-sm font-bold text-white shadow-md transition-colors hover:bg-red-700"
           >
-            Got It, Continue Checkout
+            <ShieldCheck size={17} />
+            I Understand, Continue to Checkout
           </button>
 
           <Link
             to="/terms-and-conditions"
-            className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-neutral-600 hover:text-primary-600 transition-colors"
+            className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-primary-600 transition-colors"
           >
             View full warranty &amp; returns policy <ChevronRight size={14} />
           </Link>

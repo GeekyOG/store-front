@@ -50,3 +50,11 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* ── Google Translate widget cleanup ──────────────────────────────────────
+   Hide the top "translated by Google" banner iframe and the layout shift +
+   highlight styling it injects, since we drive language switching from our
+   own header control instead of Google's default UI. */
+body {
+  top: 0 !important;
+}

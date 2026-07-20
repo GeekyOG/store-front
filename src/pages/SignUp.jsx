@@ -81,7 +81,7 @@ export default function SignUp() {
           </div>
           <h1 className="text-xl font-extrabold text-neutral-800">Account created!</h1>
           <p className="text-sm text-neutral-500 mt-1.5">
-            Here's your ₦10,000 off welcome code — we've also emailed it to you.
+            Here's your ₦5,000 off welcome code — we've also emailed it to you.
           </p>
 
           <div className="mt-5 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-primary-200 bg-primary-50 px-4 py-3">

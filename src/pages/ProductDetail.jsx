@@ -285,39 +285,68 @@ export default function ProductDetail() {
             </div>
 
             {/* Variants */}
-            {selectableVariants.map((variant) => (
-              <div key={variant.id}>
-                <p className="mb-2 text-xs font-bold uppercase tracking-wide text-neutral-500">
-                  Choose a {variant.name}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {variant.StorefrontVariantOptions.map((opt) => {
-                    const isSelected = selectedOptions[variant.name] === opt.value;
-                    const optPrice = opt.price != null ? Number(opt.price) : null;
-                    return (
-                      <button
-                        key={opt.id}
-                        onClick={() => selectOption(variant.name, opt.value)}
-                        className={`flex flex-col items-start rounded-xl border-2 px-4 py-2 text-left transition-all ${
-                          isSelected
-                            ? "border-red-500 bg-red-50"
-                            : "border-neutral-200 hover:border-neutral-300"
-                        }`}
-                      >
-                        <span className={`text-sm font-bold ${isSelected ? "text-red-600" : "text-neutral-800"}`}>
-                          {opt.value}
-                        </span>
-                        {optPrice != null && (
-                          <span className="text-xs text-neutral-400">
-                            ₦{optPrice.toLocaleString()}
+            {selectableVariants.map((variant) => {
+              const isColorVariant = variant.name.trim().toLowerCase() === "color";
+              return (
+                <div key={variant.id}>
+                  <p className="mb-2 text-xs font-bold uppercase tracking-wide text-neutral-500">
+                    {variant.name}
+                    {isColorVariant && selectedOptions[variant.name] && (
+                      <span className="ml-1.5 font-normal normal-case text-neutral-400">
+                        · {selectedOptions[variant.name]}
+                      </span>
+                    )}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {variant.StorefrontVariantOptions.map((opt) => {
+                      const isSelected = selectedOptions[variant.name] === opt.value;
+                      const optPrice = opt.price != null ? Number(opt.price) : null;
+
+                      if (isColorVariant && opt.color) {
+                        const title = optPrice != null ? `${opt.value} · ₦${optPrice.toLocaleString()}` : opt.value;
+                        return (
+                          <button
+                            key={opt.id}
+                            onClick={() => selectOption(variant.name, opt.value)}
+                            title={title}
+                            aria-label={title}
+                            className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all ${
+                              isSelected ? "border-red-500" : "border-neutral-200 hover:border-neutral-300"
+                            }`}
+                          >
+                            <span
+                              className="h-7 w-7 rounded-full border border-black/10"
+                              style={{ backgroundColor: opt.color }}
+                            />
+                          </button>
+                        );
+                      }
+
+                      return (
+                        <button
+                          key={opt.id}
+                          onClick={() => selectOption(variant.name, opt.value)}
+                          className={`flex flex-col items-start rounded-xl border-2 px-4 py-2 text-left transition-all ${
+                            isSelected
+                              ? "border-red-500 bg-red-50"
+                              : "border-neutral-200 hover:border-neutral-300"
+                          }`}
+                        >
+                          <span className={`text-sm font-bold ${isSelected ? "text-red-600" : "text-neutral-800"}`}>
+                            {opt.value}
                           </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                          {optPrice != null && (
+                            <span className="text-xs text-neutral-400">
+                              ₦{optPrice.toLocaleString()}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             {/* Quantity */}
             {inStock && (
@@ -450,7 +479,7 @@ export default function ProductDetail() {
         <ProductTabs product={product} />
 
         {/* ── Reviews ───────────────────────────────────────────────────────── */}
-        <div className="mt-10 pt-8 border-t border-neutral-200">
+        <div id="reviews" className="mt-10 pt-8 border-t border-neutral-200 scroll-mt-24">
           <h2 className="text-lg font-bold text-neutral-800 mb-4">Customer Reviews</h2>
 
           {reviews.length > 0 && (

@@ -95,7 +95,7 @@ export default function WelcomeDiscountModal({ onClose }) {
 
           {/* Heading */}
           <h2 className="text-[26px] font-extrabold leading-tight text-neutral-900">
-            Get <span className="text-primary-600">₦10,000</span> OFF
+            Get <span className="text-primary-600">₦5,000</span> OFF
             <br />
             Your First Order! 🎉
           </h2>
@@ -145,7 +145,7 @@ export default function WelcomeDiscountModal({ onClose }) {
             className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 py-3.5 text-sm font-bold text-white shadow-sm transition-colors hover:bg-primary-700"
           >
             <Gift size={17} />
-            Claim My ₦10,000 Discount
+            Claim My ₦5,000 Discount
           </button>
           <button
             onClick={onClose}

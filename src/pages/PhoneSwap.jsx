@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { RefreshCw, Smartphone, BatteryCharging, Sparkles, CheckCircle2, ArrowRight, X } from "lucide-react";
+import { RefreshCw, Smartphone, BatteryCharging, Sparkles, CheckCircle2, ArrowRight, X, Tag, ArrowLeftRight } from "lucide-react";
 import {
   useGetSwapModelsQuery,
   useGetSwapTargetProductsQuery,
@@ -91,6 +91,7 @@ export default function PhoneSwap() {
   const neatnessTiers = optionsData?.neatnessTiers ?? [];
   const issues = optionsData?.issues ?? [];
 
+  const [mode, setMode] = useState("swap"); // "swap" | "sell"
   const [fromModelId, setFromModelId] = useState("");
   const [toProductId, setToProductId] = useState("");
   const [batteryTier, setBatteryTier] = useState("");
@@ -98,6 +99,13 @@ export default function PhoneSwap() {
   const [selectedIssues, setSelectedIssues] = useState([]);
   const [result, setResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+
+  const switchMode = (nextMode) => {
+    setMode(nextMode);
+    if (nextMode === "sell") setToProductId("");
+    setErrorMsg("");
+    setResult(null);
+  };
 
   const toggleIssue = (key) =>
     setSelectedIssues((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
@@ -113,7 +121,7 @@ export default function PhoneSwap() {
     try {
       const quote = await getSwapQuote({
         fromModelId: Number(fromModelId),
-        toProductId: toProductId ? Number(toProductId) : undefined,
+        toProductId: mode === "swap" && toProductId ? Number(toProductId) : undefined,
         batteryTier,
         neatnessTier,
         issues: selectedIssues,
@@ -132,14 +140,38 @@ export default function PhoneSwap() {
           <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
             <RefreshCw size={12} /> Trade-In Program
           </span>
-          <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight">Want to Swap Your Phone?</h1>
+          <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight">
+            {mode === "swap" ? "Want to Swap Your Phone?" : "Want to Sell Your Phone?"}
+          </h1>
           <p className="text-primary-100 max-w-lg">
-            Tell us what you have and its condition — we'll give you an instant estimated trade-in value.
+            {mode === "swap"
+              ? "Tell us what you have and its condition — we'll give you an instant estimated top-up value."
+              : "Tell us what you have and its condition — we'll give you an instant estimated trade-in value."}
           </p>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-10 space-y-8">
+      <div className="mx-auto max-w-4xl px-4 py-10 space-y-2">
+        {/* Tabs */}
+        <div className="flex w-full rounded-2xl border border-neutral-200 overflow-hidden divide-x divide-neutral-200">
+          {[
+            { key: "sell", label: "Sell Your Phone", Icon: Tag },
+            { key: "swap", label: "Swap Your Phone", Icon: ArrowLeftRight },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              onClick={() => switchMode(tab.key)}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-bold transition-colors ${
+                mode === tab.key ? "bg-primary-600 text-white" : "bg-white text-neutral-800 hover:bg-neutral-50"
+              }`}
+            >
+              <tab.Icon size={16} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={handleSubmit} className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-8 space-y-6 shadow-sm">
           {/* Phones */}
           <div>
@@ -147,9 +179,9 @@ export default function PhoneSwap() {
               <div className="h-8 w-8 rounded-xl bg-primary-50 flex items-center justify-center">
                 <Smartphone size={16} className="text-primary-600" />
               </div>
-              <h2 className="font-bold text-neutral-800">Choose your phones</h2>
+              <h2 className="font-bold text-neutral-800">Choose your phone{mode === "swap" ? "s" : ""}</h2>
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${mode === "swap" ? "sm:grid-cols-2" : ""}`}>
               <div>
                 <label className={labelCls}>Phone you have</label>
                 <select className={selectCls} value={fromModelId} onChange={(e) => setFromModelId(e.target.value)} disabled={modelsLoading}>
@@ -161,17 +193,19 @@ export default function PhoneSwap() {
                   ))}
                 </select>
               </div>
-              <div>
-                <label className={labelCls}>Phone you want to swap to (optional)</label>
-                <select className={selectCls} value={toProductId} onChange={(e) => setToProductId(e.target.value)} disabled={targetsLoading}>
-                  <option value="">Select the phone you want</option>
-                  {targetProducts.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.display_name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {mode === "swap" && (
+                <div>
+                  <label className={labelCls}>Phone you want to swap to (optional)</label>
+                  <select className={selectCls} value={toProductId} onChange={(e) => setToProductId(e.target.value)} disabled={targetsLoading}>
+                    <option value="">Select the phone you want</option>
+                    {targetProducts.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.display_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
 
@@ -242,7 +276,7 @@ export default function PhoneSwap() {
             disabled={!canSubmit || quoting}
             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl bg-primary-600 px-6 py-3 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {quoting ? "Calculating…" : "Get Swap or Sale Value"} <ArrowRight size={16} />
+            {quoting ? "Calculating…" : mode === "swap" ? "Get Swap Value" : "Get Sale Value"} <ArrowRight size={16} />
           </button>
         </form>
 
