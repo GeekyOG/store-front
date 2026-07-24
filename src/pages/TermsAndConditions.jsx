@@ -7,7 +7,7 @@ const SECTIONS = [
   {
     title: "1. Acceptance of Terms",
     body: [
-      `These Terms & Conditions govern your use of the SammyTech website and your purchase of any products from us. By accessing our site or placing an order, you agree to be bound by these terms. If you do not agree, please do not use our services.`,
+      `These Terms & Conditions govern your use of the MyFlexShop website and your purchase of any products from us. By accessing our site or placing an order, you agree to be bound by these terms. If you do not agree, please do not use our services.`,
     ],
   },
   {
@@ -27,7 +27,7 @@ const SECTIONS = [
   {
     title: "4. Shipping & Delivery",
     body: [
-      `Delivery timeframes provided at checkout are estimates and not guaranteed. SammyTech is not liable for delays caused by circumstances beyond our reasonable control, including courier delays or incorrect delivery information provided by the customer.`,
+      `Delivery timeframes provided at checkout are estimates and not guaranteed. MyFlexShop is not liable for delays caused by circumstances beyond our reasonable control, including courier delays or incorrect delivery information provided by the customer.`,
     ],
   },
   {
@@ -53,13 +53,13 @@ const SECTIONS = [
   {
     title: "7. Intellectual Property",
     body: [
-      `All content on this site — including logos, product descriptions, and images — is the property of SammyTech or its licensors and may not be reproduced without permission.`,
+      `All content on this site — including logos, product descriptions, and images — is the property of MyFlexShop or its licensors and may not be reproduced without permission.`,
     ],
   },
   {
     title: "8. Limitation of Liability",
     body: [
-      `To the fullest extent permitted by law, SammyTech shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or services, beyond the value of the order in question.`,
+      `To the fullest extent permitted by law, MyFlexShop shall not be liable for any indirect, incidental, or consequential damages arising from the use of our products or services, beyond the value of the order in question.`,
     ],
   },
   {
@@ -77,7 +77,7 @@ const SECTIONS = [
   {
     title: "11. Contact Us",
     body: [
-      `Questions about these terms? Reach us at support@sammytechgadgets.com or +234 703 878 4788.`,
+      `Questions about these terms? Reach us at support@MyFlexShopgadgets.com or +234 703 878 4788.`,
     ],
   },
 ];

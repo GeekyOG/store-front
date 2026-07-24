@@ -352,7 +352,7 @@ export default function Layout() {
 
           {/* Logo */}
           <Link to="/" className="shrink-0">
-            <img src="/logo.png" alt="SammyTech" className="h-20 w-auto" />
+            <img src="/logo.png" alt="MyFlexShop" className="h-20 w-auto" />
           </Link>
 
           {/* Desktop search */}
@@ -454,7 +454,7 @@ export default function Layout() {
         <div className="mx-auto max-w-7xl px-4 py-12 grid grid-cols-1 sm:grid-cols-3 gap-10">
           {/* Brand */}
           <div className="space-y-3">
-            <p className="font-extrabold text-xl text-white">SammyTech</p>
+            <p className="font-extrabold text-xl text-white">MyFlexShop</p>
             <p className="text-neutral-400 text-sm leading-relaxed">
               Your trusted online marketplace for quality products at fair prices.
             </p>
@@ -492,17 +492,17 @@ export default function Layout() {
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 mb-4">Contact Us</p>
             <ul className="space-y-3">
-              <li className="flex items-start gap-2.5">
+              {/* <li className="flex items-start gap-2.5">
                 <MapPin size={14} className="text-primary-400 mt-0.5 shrink-0" />
                 <span className="text-sm text-neutral-400">Okorodafe Roundabout, Market Rd, Oteri 333105, Delta, Nigeria</span>
-              </li>
+              </li> */}
               <li className="flex items-center gap-2.5">
                 <Phone size={14} className="text-primary-400 shrink-0" />
-                <span className="text-sm text-neutral-400">+234 703 878 4788</span>
+                <span className="text-sm text-neutral-400">+234 703 878 0000</span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail size={14} className="text-primary-400 shrink-0" />
-                <span className="text-sm text-neutral-400">support@sammytechgadgets.com</span>
+                <span className="text-sm text-neutral-400">support@MyFlexShopgadgets.com</span>
               </li>
             </ul>
           </div>
@@ -512,7 +512,7 @@ export default function Layout() {
         <div className="border-t border-neutral-800">
           <div className="mx-auto max-w-7xl px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2">
             <p className="text-neutral-500 text-xs">
-              © {new Date().getFullYear()} SammyTech. All rights reserved.
+              © {new Date().getFullYear()} MyFlexShop. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
               <Link to="/about" className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">About</Link>

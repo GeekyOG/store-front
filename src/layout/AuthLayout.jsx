@@ -8,7 +8,7 @@ export default function AuthLayout() {
       {/* Minimal header */}
       <header className="px-6 py-5">
         <Link to="/" className="text-primary-600 font-extrabold text-xl tracking-tight">
-          SammyTech
+          MyFlexShop
         </Link>
       </header>
 

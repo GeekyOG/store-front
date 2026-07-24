@@ -126,7 +126,7 @@ function CtaSidebar() {
             <Store size={16} />
           </div>
           <p className="text-xs font-semibold text-neutral-800 group-hover:text-primary-600 transition-colors">
-            Shop With SammyTech
+            Shop With MyFlexShop
           </p>
         </Link>
         <Link to="/contact" className="flex items-center gap-3 px-4 py-3.5 group">
@@ -137,14 +137,7 @@ function CtaSidebar() {
             Send Your Packages
           </p>
         </Link>
-        <Link to="/swap" className="flex items-center gap-3 px-4 py-3.5 group">
-          <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
-            <RefreshCw size={16} />
-          </div>
-          <p className="text-xs font-semibold text-neutral-800 group-hover:text-primary-600 transition-colors">
-            Swap Your Phone
-          </p>
-        </Link>
+        
       </div>
 
       <Link
@@ -337,28 +330,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Swap CTA ──────────────────────────────────────────────────────────── */}
-      <div className="mx-auto max-w-7xl px-4 mt-8">
-        <Link
-          to="/swap"
-          className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-primary-500 text-white px-6 sm:px-10 py-7 text-center sm:text-left"
-        >
-          <div className="flex items-center gap-4">
-            <div className="h-12 w-12 hidden md:flex rounded-2xl bg-white/15  items-center justify-center shrink-0">
-              <RefreshCw size={22} />
-            </div>
-            <div>
-              <p className="text-xl font-extrabold leading-tight">Want to Swap?</p>
-              <p className="text-primary-100 text-sm mt-0.5">
-                Trade in your old phone and get an instant estimated value
-              </p>
-            </div>
-          </div>
-          <span className="inline-flex items-center gap-2 bg-white text-primary-700 font-bold px-6 py-3 rounded-xl hover:bg-primary-50 transition-colors shadow-md shrink-0">
-            Swap Your Phone Here <ChevronRight size={16} />
-          </span>
-        </Link>
-      </div>
+   
 
       <main className="mx-auto max-w-7xl px-4 py-10 space-y-14">
         {/* ── Best Selling ────────────────────────────────────────────────────── */}

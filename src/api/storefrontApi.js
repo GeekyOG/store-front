@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-const BASE_URL = "https://api.sammytechgadgets.com/api";
-// const BASE_URL = "http://localhost:8080/api";
+const BASE_URL = "https://api.myflexishop.com/api/v1";
+// const BASE_URL = "http://localhost:8000/api/v1";
 
 
 export const storefrontApi = createApi({
@@ -14,7 +14,7 @@ export const storefrontApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Product", "Cms", "Categories", "Customer", "ShippingFee"],
+  tagTypes: ["Product", "Cms", "Categories", "Customer", "ShippingFee", "Kyc"],
   endpoints: (builder) => ({
     // ── Products ──────────────────────────────────────────────────────────────
     getPublicProducts: builder.query({
@@ -68,6 +68,20 @@ export const storefrontApi = createApi({
     getReferralSummary: builder.query({
       query: () => "/storefront/auth/referrals",
       providesTags: ["Customer"],
+    }),
+
+    // ── KYC ───────────────────────────────────────────────────────────────────
+    getMyKyc: builder.query({
+      query: () => "/storefront/kyc/me",
+      providesTags: ["Kyc"],
+    }),
+    submitKyc: builder.mutation({
+      query: (formData) => ({ url: "/storefront/kyc", method: "POST", body: formData }),
+      invalidatesTags: ["Kyc"],
+    }),
+    resubmitKyc: builder.mutation({
+      query: (formData) => ({ url: "/storefront/kyc", method: "PUT", body: formData }),
+      invalidatesTags: ["Kyc"],
     }),
 
     // ── Orders ──────────────────────────────────────────────────────────────
@@ -136,6 +150,9 @@ export const {
   useUpdateProfileMutation,
   useUpdatePasswordMutation,
   useGetReferralSummaryQuery,
+  useGetMyKycQuery,
+  useSubmitKycMutation,
+  useResubmitKycMutation,
   usePlaceOrderMutation,
   useGetMyOrdersQuery,
   useGetOrderByNumberQuery,

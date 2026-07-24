@@ -19,6 +19,10 @@ import {
   Gift,
   Copy,
   Users,
+  ShieldCheck,
+  UploadCloud,
+  FileText,
+  RefreshCw,
 } from "lucide-react";
 import {
   useGetMeQuery,
@@ -26,6 +30,9 @@ import {
   useUpdatePasswordMutation,
   useGetMyOrdersQuery,
   useGetReferralSummaryQuery,
+  useGetMyKycQuery,
+  useSubmitKycMutation,
+  useResubmitKycMutation,
 } from "../api/storefrontApi";
 import { selectCurrentCustomer, logout } from "../store/authSlice";
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
@@ -581,6 +588,251 @@ function ReferralsTab() {
   );
 }
 
+// ── Tab: Verification (KYC) ────────────────────────────────────────────────────
+
+const KYC_DOC_TYPES = [
+  { label: "National ID", value: "national_id" },
+  { label: "Passport", value: "passport" },
+  { label: "Driver's License", value: "drivers_license" },
+  { label: "Voter's Card", value: "voters_card" },
+];
+
+const KYC_STATUS_CONFIG = {
+  pending: { label: "Under Review", color: "bg-amber-100 text-amber-700", icon: Clock },
+  approved: { label: "Verified", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
+  rejected: { label: "Rejected", color: "bg-red-100 text-red-700", icon: XCircle },
+};
+
+const KYC_MAX_FILE_BYTES = 200 * 1024; // 200 KB
+
+function KycUploadForm({ mode, onSubmit, isLoading, setFeedback }) {
+  const [docType, setDocType] = useState("national_id");
+  const [idNumber, setIdNumber] = useState("");
+  const [file, setFile] = useState(null);
+
+  const handleFileChange = (e) => {
+    const selected = e.target.files?.[0] ?? null;
+    if (selected && selected.size > KYC_MAX_FILE_BYTES) {
+      setFeedback({ type: "error", msg: "File is too large. Maximum size is 200KB." });
+      setFile(null);
+      e.target.value = "";
+      return;
+    }
+    setFeedback(null);
+    setFile(selected);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFeedback(null);
+    if (!file) return setFeedback({ type: "error", msg: "Please choose a file to upload." });
+    if (file.size > KYC_MAX_FILE_BYTES) {
+      return setFeedback({ type: "error", msg: "File is too large. Maximum size is 200KB." });
+    }
+
+    const formData = new FormData();
+    formData.append("docType", docType);
+    if (idNumber.trim()) formData.append("idNumber", idNumber.trim());
+    formData.append("file", file);
+    await onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-neutral-600 mb-1">Document Type</label>
+        <select
+          value={docType}
+          onChange={(e) => setDocType(e.target.value)}
+          className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition bg-white"
+        >
+          {KYC_DOC_TYPES.map((d) => (
+            <option key={d.value} value={d.value}>{d.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-neutral-600 mb-1">
+          ID Number <span className="font-normal text-neutral-400">(optional)</span>
+        </label>
+        <input
+          type="text"
+          value={idNumber}
+          onChange={(e) => setIdNumber(e.target.value)}
+          placeholder="e.g. NIN, passport or license number"
+          className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-neutral-600 mb-1">Upload Document</label>
+        <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-neutral-200 hover:border-primary-300 transition-colors px-4 py-8 cursor-pointer text-center">
+          <UploadCloud size={22} className="text-neutral-300" />
+          <span className="text-sm text-neutral-500">
+            {file ? file.name : "Click to choose a JPEG, PNG, WEBP or PDF (max 200KB)"}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </label>
+      </div>
+      <button
+        type="submit"
+        disabled={isLoading}
+        className="rounded-xl bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isLoading ? "Submitting…" : mode === "resubmit" ? "Resubmit for Review" : "Submit for Verification"}
+      </button>
+    </form>
+  );
+}
+
+function VerificationTab() {
+  const { data: kycData, isLoading, error, refetch } = useGetMyKycQuery();
+  const [submitKyc, { isLoading: isSubmitting }] = useSubmitKycMutation();
+  const [resubmitKyc, { isLoading: isResubmitting }] = useResubmitKycMutation();
+  const [feedback, setFeedback] = useState(null);
+
+  const kyc = kycData?.data;
+  // The backend returns 404 when the customer has no KYC submission yet —
+  // that's the expected "show the upload form" case, not a real failure.
+  const notSubmittedYet = error?.status === 404;
+  const loadFailed = !!error && !notSubmittedYet;
+
+  const handleSubmit = async (formData) => {
+    setFeedback(null);
+    try {
+      await submitKyc(formData).unwrap();
+      setFeedback({ type: "success", msg: "KYC submitted successfully. We'll review it shortly." });
+    } catch (err) {
+      setFeedback({ type: "error", msg: err?.data?.message ?? "Failed to submit KYC." });
+    }
+  };
+
+  const handleResubmit = async (formData) => {
+    setFeedback(null);
+    try {
+      await resubmitKyc(formData).unwrap();
+      setFeedback({ type: "success", msg: "KYC resubmitted for review." });
+    } catch (err) {
+      setFeedback({ type: "error", msg: err?.data?.message ?? "Failed to resubmit KYC." });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-3">
+        <div className="h-32 rounded-2xl bg-neutral-100 animate-pulse" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+      <div className="flex items-center gap-2 mb-1">
+        <ShieldCheck size={16} className="text-primary-500" />
+        <h3 className="text-sm font-bold text-neutral-800">Identity Verification</h3>
+      </div>
+      <p className="text-xs text-neutral-400 mb-4">
+        Verify your identity to unlock part payments and higher order limits.
+      </p>
+
+      <Feedback {...(feedback ?? {})} msg={feedback?.msg} onClose={() => setFeedback(null)} />
+
+      {loadFailed && (
+        <div className="flex items-center justify-between gap-3 rounded-xl bg-red-50 text-red-700 p-3 text-sm mb-4">
+          <span className="flex items-center gap-2">
+            <AlertCircle size={15} className="shrink-0" />
+            Couldn't load your verification status.
+          </span>
+          <button
+            onClick={() => refetch()}
+            className="shrink-0 flex items-center gap-1.5 rounded-lg bg-red-100 hover:bg-red-200 px-2.5 py-1.5 text-xs font-semibold transition-colors"
+          >
+            <RefreshCw size={12} />
+            Retry
+          </button>
+        </div>
+      )}
+
+      {!kyc && !loadFailed && (
+        <KycUploadForm
+          mode="submit"
+          onSubmit={handleSubmit}
+          isLoading={isSubmitting}
+          setFeedback={setFeedback}
+        />
+      )}
+
+      {kyc && (
+        <div className="space-y-4">
+          {(() => {
+            const cfg = KYC_STATUS_CONFIG[kyc.status] ?? KYC_STATUS_CONFIG.pending;
+            const Icon = cfg.icon;
+            return (
+              <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold ${cfg.color}`}>
+                <Icon size={15} />
+                {cfg.label}
+              </div>
+            );
+          })()}
+
+          <div className="text-sm text-neutral-600 space-y-1">
+            <p><span className="font-semibold text-neutral-700">Document:</span> {KYC_DOC_TYPES.find((d) => d.value === kyc.docType)?.label ?? kyc.docType ?? "N/A"}</p>
+            {kyc.idNumber && (
+              <p><span className="font-semibold text-neutral-700">ID Number:</span> {kyc.idNumber}</p>
+            )}
+            <p><span className="font-semibold text-neutral-700">Submitted:</span> {formatDate(kyc.createdAt)}</p>
+          </div>
+
+          {kyc.fileDataUrl && (
+            <div>
+              <p className="text-xs font-semibold text-neutral-600 mb-1.5">Uploaded Document</p>
+              {kyc.mimeType === "application/pdf" ? (
+                <a
+                  href={kyc.fileDataUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl border border-neutral-200 px-3 py-2.5 text-sm font-medium text-primary-600 hover:bg-neutral-50 transition-colors"
+                >
+                  <FileText size={15} />
+                  View PDF Document
+                </a>
+              ) : (
+                <a href={kyc.fileDataUrl} target="_blank" rel="noopener noreferrer">
+                  <img
+                    src={kyc.fileDataUrl}
+                    alt="Uploaded KYC document"
+                    className="max-w-full sm:max-w-xs rounded-xl border border-neutral-200"
+                  />
+                </a>
+              )}
+            </div>
+          )}
+
+          {kyc.status === "rejected" && kyc.rejectionReason && (
+            <div className="flex items-start gap-2 rounded-xl bg-red-50 text-red-700 p-3 text-sm">
+              <AlertCircle size={15} className="mt-0.5 shrink-0" />
+              <span><span className="font-semibold">Reason for rejection:</span> {kyc.rejectionReason}</span>
+            </div>
+          )}
+
+          {kyc.status === "rejected" && (
+            <KycUploadForm
+              mode="resubmit"
+              onSubmit={handleResubmit}
+              isLoading={isResubmitting}
+              setFeedback={setFeedback}
+            />
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 const TABS = [
@@ -589,6 +841,7 @@ const TABS = [
   { id: "referrals", label: "Referrals", icon: Gift },
   { id: "profile",   label: "Profile",   icon: User },
   { id: "address",   label: "Address",   icon: MapPin },
+  { id: "verification", label: "Verification", icon: ShieldCheck },
   { id: "security",  label: "Security",  icon: Lock },
 ];
 
@@ -685,6 +938,7 @@ export default function Account() {
           {activeTab === "address" && (
             <AddressTab customer={customer ?? authCustomer} />
           )}
+          {activeTab === "verification" && <VerificationTab />}
           {activeTab === "security" && <SecurityTab />}
         </main>
       </div>

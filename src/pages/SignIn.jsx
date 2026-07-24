@@ -66,7 +66,7 @@ export default function SignIn() {
             <LogIn size={22} className="text-primary-600" />
           </div>
           <h1 className="text-2xl font-extrabold text-neutral-800">Welcome back</h1>
-          <p className="text-sm text-neutral-400 mt-1">Sign in to your SammyTech account</p>
+          <p className="text-sm text-neutral-400 mt-1">Sign in to your MyFlexShop account</p>
         </div>
 
         {serverError && (

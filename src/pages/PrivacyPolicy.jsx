@@ -7,7 +7,7 @@ const SECTIONS = [
   {
     title: "1. Introduction",
     body: [
-      `SammyTech ("we", "us", "our") respects your privacy and is committed to protecting the personal information you share with us. This Privacy Policy explains what information we collect, how we use it, and the choices you have when you shop with us.`,
+      `MyFlexShop ("we", "us", "our") respects your privacy and is committed to protecting the personal information you share with us. This Privacy Policy explains what information we collect, how we use it, and the choices you have when you shop with us.`,
       `By using our website and placing an order, you agree to the collection and use of information in accordance with this policy.`,
     ],
   },
@@ -66,7 +66,7 @@ const SECTIONS = [
   {
     title: "9. Contact Us",
     body: [
-      `If you have any questions about this Privacy Policy, reach out to us at support@sammytechgadgets.com or +234 703 878 4788.`,
+      `If you have any questions about this Privacy Policy, reach out to us at support@MyFlexShopgadgets.com or +234 703 878 4788.`,
     ],
   },
 ];

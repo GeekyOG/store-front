@@ -119,7 +119,7 @@ export default function SignUp() {
             <UserPlus size={22} className="text-primary-600" />
           </div>
           <h1 className="text-2xl font-extrabold text-neutral-800">Create account</h1>
-          <p className="text-sm text-neutral-400 mt-1">Join SammyTech and start shopping</p>
+          <p className="text-sm text-neutral-400 mt-1">Join MyFlexShop and start shopping</p>
         </div>
 
         {serverError && (

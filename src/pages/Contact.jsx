@@ -22,7 +22,7 @@ const CONTACT_INFO = [
     color: "#f59e0b",
     bg: "#f59e0b15",
     label: "Email",
-    lines: ["support@sammytechgadgets.com", "We reply within 24 hours"],
+    lines: ["support@MyFlexShopgadgets.com", "We reply within 24 hours"],
   },
   {
     icon: Clock,

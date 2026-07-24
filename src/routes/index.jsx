@@ -13,7 +13,6 @@ import Checkout from "../pages/Checkout";
 import OrderConfirmation from "../pages/OrderConfirmation";
 import Wishlist from "../pages/Wishlist";
 import Account from "../pages/Account";
-import PhoneSwap from "../pages/PhoneSwap";
 import SignIn from "../pages/SignIn";
 import SignUp from "../pages/SignUp";
 import ForgotPassword from "../pages/ForgotPassword";
@@ -35,7 +34,6 @@ const router = createBrowserRouter([
       { path: "/order-confirmation/:orderNumber", element: <OrderConfirmation /> },
       { path: "/wishlist",                      element: <Wishlist /> },
       { path: "/account",                       element: <Account /> },
-      { path: "/swap",                          element: <PhoneSwap /> },
       { path: "*",                              element: <Home /> },
     ],
   },

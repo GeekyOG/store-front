@@ -52,7 +52,7 @@ export default function About() {
             We built the shop we always wanted to shop at
           </h1>
           <p className="mt-4 text-primary-100 text-lg max-w-xl mx-auto leading-relaxed">
-            SammyTech was born from a simple frustration: great products hiding behind bad shopping experiences.
+            MyFlexShop was born from a simple frustration: great products hiding behind bad shopping experiences.
             We set out to fix that.
           </p>
           <Link
@@ -87,7 +87,7 @@ export default function About() {
             </h2>
             <p className="mt-4 text-neutral-500 leading-relaxed">
               We believe access to quality shouldn't depend on where you live or how connected you are.
-              SammyTech brings verified products from trusted sellers straight to your door — with the
+              MyFlexShop brings verified products from trusted sellers straight to your door — with the
               kind of service that turns first-time buyers into lifelong customers.
             </p>
             <p className="mt-3 text-neutral-500 leading-relaxed">
@@ -140,7 +140,7 @@ export default function About() {
         <section className="rounded-2xl bg-gradient-to-br from-primary-600 to-primary-700 text-white p-10 text-center">
           <h2 className="text-2xl font-extrabold">Ready to start shopping?</h2>
           <p className="text-primary-100 mt-2">
-            Join thousands of happy customers who trust SammyTech.
+            Join thousands of happy customers who trust MyFlexShop.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3 flex-wrap">
             <Link

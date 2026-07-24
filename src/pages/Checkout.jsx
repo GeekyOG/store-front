@@ -14,7 +14,7 @@ import {
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
 
 const BANK = {
-  name: "SammyTech",
+  name: "MyFlexShop",
   account: "0123456789",
   bank: "First Bank Nigeria",
 };
