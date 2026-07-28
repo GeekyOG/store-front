@@ -68,6 +68,20 @@ export default function ProductDetail() {
     setQty((q) => Math.min(Math.max(q, 1), Math.max(maxQty, 1)));
   }, [maxQty]);
 
+  // Pre-select the first option of every variant so Add to Cart / Buy Now
+  // are usable immediately — the customer can still change any option via
+  // selectOption. Keyed on product id (not the whole product object) so it
+  // fires once per product and resets cleanly when navigating to another one.
+  useEffect(() => {
+    if (!product) return;
+    const defaults = {};
+    for (const variant of product.StorefrontVariants ?? []) {
+      const opts = variant.StorefrontVariantOptions ?? [];
+      if (opts.length > 0) defaults[variant.name] = opts[0].value;
+    }
+    setSelectedOptions(defaults);
+  }, [product?.id]);
+
   if (isLoading) {
     return (
       <div className="bg-neutral-100 flex items-center justify-center py-32">
@@ -290,7 +304,7 @@ export default function ProductDetail() {
               return (
                 <div key={variant.id}>
                   <p className="mb-2 text-xs font-bold uppercase tracking-wide text-neutral-500">
-                    {variant.name}
+                    Select {variant.name}
                     {isColorVariant && selectedOptions[variant.name] && (
                       <span className="ml-1.5 font-normal normal-case text-neutral-400">
                         · {selectedOptions[variant.name]}

@@ -106,7 +106,7 @@ function WarrantyModal({ onClose }) {
           </h2>
           <div className="mx-auto mt-2 h-0.5 w-10 rounded-full bg-red-600" />
 
-          <p className="mt-4 text-sm text-neutral-500 leading-relaxed">
+          <p className="mt-4   md:block text-sm text-neutral-500 leading-relaxed">
             Shop with confidence. Every eligible purchase from SammyTech
             Gadgets is backed by our limited warranty for your peace of mind.
             If your device develops a manufacturer-related fault under normal
@@ -115,7 +115,7 @@ function WarrantyModal({ onClose }) {
             our warranty policy.
           </p>
 
-          <div className="mt-5 grid grid-cols-3 gap-2">
+          <div className="mt-5 grid grid-cols-3 justify-center items-center md:grid-cols-3 gap-2">
             {WARRANTY_TIERS.map(({ Icon, color, bg, title, desc }) => (
               <div
                 key={title}
@@ -137,16 +137,7 @@ function WarrantyModal({ onClose }) {
             ))}
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-x-3 gap-y-2 rounded-xl border border-neutral-200 px-4 py-3 text-left">
-            {WARRANTY_EXCLUSIONS.map((label) => (
-              <div key={label} className="flex items-start gap-1.5">
-                <XCircle size={14} className="mt-0.5 shrink-0 text-red-500" />
-                <span className="text-[11px] leading-tight text-neutral-600">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
+          
 
           <p className="mt-4 text-xs text-neutral-500 leading-relaxed">
             Please contact us immediately for any warranty-related issues.
@@ -280,7 +271,12 @@ export default function Checkout() {
     ? Math.max(0, Math.min(Number(referralAmountInput) || 0, maxReferralUsable))
     : 0;
   const shippingFee = isPickup ? 0 : (shippingFees?.find((f) => f.state === form.state)?.fee ?? 0);
-  const total = Math.max(subtotal - discountAmount - referralAmount + shippingFee, 0);
+  const preVatTotal = Math.max(subtotal - discountAmount - referralAmount + shippingFee, 0);
+  // Flat ₦2,000 once the pre-VAT total exceeds ₦100,000, otherwise 10% of it
+  // — must mirror computeVatAmount in storefrontOrderController.js so this
+  // preview matches what the backend actually charges.
+  const vatAmount = Math.round(preVatTotal > 100000 ? 2000 : preVatTotal * 0.1);
+  const total = preVatTotal + vatAmount;
 
   const handleToggleReferralBalance = () => {
     setUseReferralBalance((prev) => {
@@ -794,6 +790,10 @@ export default function Checkout() {
                       {form.state ? "Free" : "Select a state"}
                     </span>
                   )}
+                </div>
+                <div className="flex justify-between text-neutral-600">
+                  <span>VAT</span>
+                  <span>₦{vatAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between font-bold text-neutral-800 text-base pt-1 border-t border-neutral-100">
                   <span>Total</span>

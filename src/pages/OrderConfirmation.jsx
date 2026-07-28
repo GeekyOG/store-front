@@ -207,6 +207,10 @@ export default function OrderConfirmation() {
                 <span>₦{order.shipping_fee.toLocaleString()}</span>
               )}
             </div>
+            <div className="flex justify-between text-neutral-600">
+              <span>VAT</span>
+              <span>₦{Number(order.vat_amount ?? 0).toLocaleString()}</span>
+            </div>
             <div className="flex justify-between font-bold text-neutral-800 text-base">
               <span>Total</span>
               <span className="text-primary-600">₦{order.total?.toLocaleString()}</span>

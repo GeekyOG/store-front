@@ -573,12 +573,14 @@ function SecurityTab() {
 
 // ── Tab: Referrals ─────────────────────────────────────────────────────────────
 
-function ReferralsTab() {
+function ReferralsTab({customer}) {
+ 
+  
   const { data, isLoading } = useGetReferralSummaryQuery();
   const [copied, setCopied] = useState(false);
 
-  const referralLink = data?.referral_code
-    ? `${window.location.origin}/sign-up?ref=${data.referral_code}`
+  const referralLink = customer?.referral_code
+    ? `${window.location.origin}/sign-up?ref=${customer?.referral_code}`
     : "";
 
   const copyLink = async () => {
@@ -890,7 +892,7 @@ export default function Account() {
             <OrdersTab orders={orders} isLoading={ordersLoading} />
           )}
           {activeTab === "discounts" && <DiscountsTab />}
-          {activeTab === "referrals" && <ReferralsTab />}
+          {activeTab === "referrals" && <ReferralsTab  customer={customer}/>}
           {activeTab === "profile" && (
             <ProfileTab customer={customer ?? authCustomer} />
           )}

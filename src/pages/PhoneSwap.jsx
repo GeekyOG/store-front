@@ -13,7 +13,7 @@ const selectCls =
 const labelCls = "text-xs font-semibold text-neutral-500";
 
 function modelLabel(m) {
-  return `${m.brand} ${m.model_name}${m.storage_gb ? ` ${m.storage_gb}GB` : ""}`;
+  return `${m.brand} ${m.model_name}`;
 }
 
 function formatNaira(n) {
@@ -93,6 +93,7 @@ export default function PhoneSwap() {
 
   const [mode, setMode] = useState("swap"); // "swap" | "sell"
   const [fromModelId, setFromModelId] = useState("");
+  const [fromSizeId, setFromSizeId] = useState("");
   const [toProductId, setToProductId] = useState("");
   const [batteryTier, setBatteryTier] = useState("");
   const [neatnessTier, setNeatnessTier] = useState("");
@@ -110,7 +111,15 @@ export default function PhoneSwap() {
   const toggleIssue = (key) =>
     setSelectedIssues((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
 
-  const canSubmit = fromModelId && batteryTier && neatnessTier;
+  const selectedFromModel = models.find((m) => String(m.id) === String(fromModelId));
+  const fromModelSizes = (selectedFromModel?.SwapPhoneModelSizes ?? []).filter((s) => s.active);
+
+  const handleFromModelChange = (id) => {
+    setFromModelId(id);
+    setFromSizeId("");
+  };
+
+  const canSubmit = fromModelId && fromSizeId && batteryTier && neatnessTier;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -121,6 +130,7 @@ export default function PhoneSwap() {
     try {
       const quote = await getSwapQuote({
         fromModelId: Number(fromModelId),
+        fromSizeId: Number(fromSizeId),
         toProductId: mode === "swap" && toProductId ? Number(toProductId) : undefined,
         batteryTier,
         neatnessTier,
@@ -182,16 +192,37 @@ export default function PhoneSwap() {
               <h2 className="font-bold text-neutral-800">Choose your phone{mode === "swap" ? "s" : ""}</h2>
             </div>
             <div className={`grid gap-4 ${mode === "swap" ? "sm:grid-cols-2" : ""}`}>
-              <div>
-                <label className={labelCls}>Phone you have</label>
-                <select className={selectCls} value={fromModelId} onChange={(e) => setFromModelId(e.target.value)} disabled={modelsLoading}>
-                  <option value="">Select your current phone</option>
-                  {models.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {modelLabel(m)}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Phone you have</label>
+                  <select className={selectCls} value={fromModelId} onChange={(e) => handleFromModelChange(e.target.value)} disabled={modelsLoading}>
+                    <option value="">Select your current phone</option>
+                    {models.map((m) => (
+                      <option key={m.id} value={m.id}>
+                        {modelLabel(m)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={labelCls}>Storage size</label>
+                  <select
+                    className={selectCls}
+                    value={fromSizeId}
+                    onChange={(e) => setFromSizeId(e.target.value)}
+                    disabled={!fromModelId}
+                  >
+                    <option value="">Select size</option>
+                    {fromModelSizes.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.storage_gb}GB
+                      </option>
+                    ))}
+                  </select>
+                  {fromModelId && fromModelSizes.length === 0 && (
+                    <p className="mt-1 text-xs text-amber-600">No sizes yet.</p>
+                  )}
+                </div>
               </div>
               {mode === "swap" && (
                 <div>
