@@ -54,7 +54,7 @@ function FilterSidebar({ categories, filters, onCategoryChange, onSubcategoryCha
 
       {/* Categories */}
       <div>
-        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-400 mb-3">
+        <p className="flex items-center gap-2 text-[0.65rem] md:text-xs font-bold uppercase tracking-widest text-neutral-400 mb-3">
           <LayoutGrid size={12} />
           Categories
         </p>
@@ -86,7 +86,7 @@ function FilterSidebar({ categories, filters, onCategoryChange, onSubcategoryCha
                       {isSelected && (
                         <span className="h-1.5 w-1.5 rounded-full bg-primary-500 shrink-0" />
                       )}
-                      <span className="truncate">{cat.name}</span>
+                      <span className="truncate text-xs">{cat.name}</span>
                     </span>
                     {hasSubs && (
                       <ChevronDown
@@ -103,7 +103,7 @@ function FilterSidebar({ categories, filters, onCategoryChange, onSubcategoryCha
                           <li key={sub.id}>
                             <button
                               onClick={() => onSubcategoryChange(isSubSel ? "" : String(sub.id))}
-                              className={`w-full text-left px-2 py-1.5 rounded-lg text-[13px] transition-colors ${
+                              className={`w-full text-left text-xs px-2 py-1.5 rounded-lg text-[13px] transition-colors ${
                                 isSubSel
                                   ? "text-primary-700 font-semibold bg-primary-50"
                                   : "text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100"
@@ -471,7 +471,7 @@ export default function Products() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setDrawerOpen(false)} />
           <div
             ref={drawerRef}
-            className="relative ml-auto w-72 max-w-full h-full bg-white shadow-2xl flex flex-col"
+            className="relative ml-auto w-[50%] max-w-full h-full bg-white shadow-2xl flex flex-col"
           >
             <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
               <p className="text-sm font-bold text-neutral-800">Filters</p>

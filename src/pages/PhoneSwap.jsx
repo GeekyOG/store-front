@@ -43,6 +43,7 @@ function SwapResultModal({ result, onClose }) {
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-primary-500">
                 Estimated top-up for {result.toProduct.display_name}
+                {result.toProduct.selected_size ? ` (${result.toProduct.selected_size})` : ""}
               </p>
               <p className="mt-1 text-xl font-bold text-neutral-800">
                 {result.topUpRange.max <= 0
@@ -50,7 +51,7 @@ function SwapResultModal({ result, onClose }) {
                   : `${formatNaira(Math.max(0, result.topUpRange.min))} - ${formatNaira(Math.max(0, result.topUpRange.max))}`}
               </p>
               <p className="mt-1 text-xs text-neutral-400">
-                Market value {formatNaira(result.toProduct.regular_price)} minus your trade-in value
+                Market value {formatNaira(result.toProduct.market_value ?? result.toProduct.regular_price)} minus your trade-in value
               </p>
             </div>
           ) : (
@@ -95,6 +96,7 @@ export default function PhoneSwap() {
   const [fromModelId, setFromModelId] = useState("");
   const [fromSizeId, setFromSizeId] = useState("");
   const [toProductId, setToProductId] = useState("");
+  const [toVariantOptionId, setToVariantOptionId] = useState("");
   const [batteryTier, setBatteryTier] = useState("");
   const [neatnessTier, setNeatnessTier] = useState("");
   const [selectedIssues, setSelectedIssues] = useState([]);
@@ -103,7 +105,10 @@ export default function PhoneSwap() {
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
-    if (nextMode === "sell") setToProductId("");
+    if (nextMode === "sell") {
+      setToProductId("");
+      setToVariantOptionId("");
+    }
     setErrorMsg("");
     setResult(null);
   };
@@ -119,7 +124,23 @@ export default function PhoneSwap() {
     setFromSizeId("");
   };
 
-  const canSubmit = fromModelId && fromSizeId && batteryTier && neatnessTier;
+  const selectedToProduct = targetProducts.find((p) => String(p.id) === String(toProductId));
+  const toSizeVariant = (selectedToProduct?.StorefrontVariants ?? []).find(
+    (v) => (v.StorefrontVariantOptions ?? []).length > 0
+  );
+  const toSizeOptions = toSizeVariant?.StorefrontVariantOptions ?? [];
+
+  const handleToProductChange = (id) => {
+    setToProductId(id);
+    setToVariantOptionId("");
+  };
+
+  const canSubmit =
+    fromModelId &&
+    fromSizeId &&
+    batteryTier &&
+    neatnessTier &&
+    (mode !== "swap" || !toProductId || !toSizeVariant || toVariantOptionId);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -132,6 +153,7 @@ export default function PhoneSwap() {
         fromModelId: Number(fromModelId),
         fromSizeId: Number(fromSizeId),
         toProductId: mode === "swap" && toProductId ? Number(toProductId) : undefined,
+        toVariantOptionId: mode === "swap" && toVariantOptionId ? Number(toVariantOptionId) : undefined,
         batteryTier,
         neatnessTier,
         issues: selectedIssues,
@@ -225,16 +247,40 @@ export default function PhoneSwap() {
                 </div>
               </div>
               {mode === "swap" && (
-                <div>
-                  <label className={labelCls}>Phone you want to swap to (optional)</label>
-                  <select className={selectCls} value={toProductId} onChange={(e) => setToProductId(e.target.value)} disabled={targetsLoading}>
-                    <option value="">Select the phone you want</option>
-                    {targetProducts.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.display_name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={labelCls}> Phone you want to swap to</label>
+                    <select
+                      className={selectCls}
+                      value={toProductId}
+                      onChange={(e) => handleToProductChange(e.target.value)}
+                      disabled={targetsLoading}
+                    >
+                      <option value="">Phone you want</option>
+                      {targetProducts.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.display_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  {toSizeVariant && (
+                    <div>
+                      <label className={labelCls}>Storage size</label>
+                      <select
+                        className={selectCls}
+                        value={toVariantOptionId}
+                        onChange={(e) => setToVariantOptionId(e.target.value)}
+                      >
+                        <option value="">Select {toSizeVariant.name.toLowerCase()}</option>
+                        {toSizeOptions.map((o) => (
+                          <option key={o.id} value={o.id}>
+                            {o.value}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
