@@ -19,6 +19,10 @@ import {
   ArrowLeftRight,
   Mail,
   MessageCircle,
+  Laptop,
+  Tablet,
+  Gamepad2,
+  Zap,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -55,12 +59,12 @@ function ProductCarousel({ products, delay = 2000, reverse = false }) {
       }}
     >
       {products.map((p) => {
-        
-        return(
-        <SwiperSlide key={p.id}>
-          <ProductCard product={p}  />
-        </SwiperSlide>
-      )})}
+        return (
+          <SwiperSlide key={p.id}>
+            <ProductCard product={p} />
+          </SwiperSlide>
+        );
+      })}
     </Swiper>
   );
 }
@@ -101,7 +105,9 @@ function CategorySidebar({ categories }) {
     <aside className="hidden lg:block w-56 shrink-0">
       <div className="h-full min-h-[320px] rounded-2xl border border-neutral-200 bg-white overflow-y-auto">
         <ul className="divide-y divide-neutral-50">
-          <h1 className="ml-4 mt-4 mb-2 text-lg font-semibold text-neutral-800">Categories</h1>
+          <h1 className="ml-4 mt-4 mb-2 text-lg font-semibold text-neutral-800">
+            Categories
+          </h1>
           {categories?.slice(0, 8).map((cat) => (
             <li key={cat.id}>
               <Link
@@ -119,12 +125,88 @@ function CategorySidebar({ categories }) {
   );
 }
 
+// ── Browse categories grid ──────────────────────────────────────────────────
+const BROWSE_CATEGORIES = [
+  { label: "iPhones", Icon: Smartphone, bg: "#eff6ff", color: "#3b82f6" },
+  { label: "Samsung", Icon: Smartphone, bg: "#ecfdf5", color: "#10b981" },
+  { label: "UK Used Phones", Icon: RefreshCw, bg: "#f3f4f6", color: "#6b7280" },
+  { label: "Laptops", Icon: Laptop, bg: "#fff7ed", color: "#f59e0b" },
+  { label: "Infinix", Icon: Smartphone, bg: "#f5f3ff", color: "#8b5cf6" },
+  { label: "Tecno", Icon: Smartphone, bg: "#fef2f2", color: "#ef4444" },
+  { label: "Redmi", Icon: Smartphone, bg: "#fdf2f8", color: "#ec4899" },
+  { label: "Game Consoles", Icon: Gamepad2, bg: "#eef2ff", color: "#6366f1" },
+  { label: "Oraimo Products", Icon: Zap, bg: "#fffbeb", color: "#f59e0b" },
+  { label: "iPads", Icon: Tablet, bg: "#f3f4f6", color: "#6b7280" },
+];
+
+function findCategoryId(categories, label) {
+  const norm = (s) => s?.toLowerCase().trim() ?? "";
+  const target = norm(label);
+  const match = categories?.find((c) => {
+    const name = norm(c.name);
+    return name === target || name.includes(target) || target.includes(name);
+  });
+  return match?.id ?? null;
+}
+
+function BrowseCategories({ categories }) {
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-primary-600">
+            Browse
+          </p>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-neutral-800 mt-1">
+            Shop Your Favourite Gadgets
+          </h2>
+        </div>
+        <Link
+          to="/products"
+          className="flex items-center gap-1 text-sm text-primary-600 hover:text-primary-700 font-medium transition-colors shrink-0"
+        >
+          View all <ChevronRight size={14} />
+        </Link>
+      </div>
+
+      <div className="flex gap-4 overflow-x-auto -mx-4 px-4 pb-1 no-scrollbar md:grid md:grid-cols-4 md:overflow-visible md:mx-0 md:px-0 md:pb-0 lg:grid-cols-5">
+        {BROWSE_CATEGORIES.map(({ label, Icon, bg, color }) => {
+          const categoryId = findCategoryId(categories, label);
+          const to = categoryId
+            ? `/products?category=${categoryId}`
+            : `/products?search=${encodeURIComponent(label)}`;
+          return (
+            <Link
+              key={label}
+              to={to}
+              className="flex w-24 shrink-0 flex-col items-center justify-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-6 text-center hover:border-primary-200 hover:shadow-sm transition-all md:w-auto"
+            >
+              <div
+                className="h-14 w-14 rounded-full flex items-center justify-center shrink-0"
+                style={{ background: bg }}
+              >
+                <Icon size={24} style={{ color }} />
+              </div>
+              <span className="text-sm font-semibold text-neutral-800">
+                {label}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // ── Call-to-action sidebar ────────────────────────────────────────────────────
 function CtaSidebar() {
   return (
     <aside className="hidden lgx:flex flex-col gap-2 w-56 shrink-0">
       <div className="rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-50">
-        <a href="tel:+2347038784788" className="flex items-center gap-3 px-4 py-3.5 group">
+        <a
+          href="tel:+2347038784788"
+          className="flex items-center gap-3 px-4 py-3.5 group"
+        >
           <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
             <Phone size={16} />
           </div>
@@ -135,7 +217,10 @@ function CtaSidebar() {
             </p>
           </div>
         </a>
-        <Link to="/contact" className="flex items-center gap-3 px-4 py-3.5 group">
+        <Link
+          to="/contact"
+          className="flex items-center gap-3 px-4 py-3.5 group"
+        >
           <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
             <Store size={16} />
           </div>
@@ -143,12 +228,15 @@ function CtaSidebar() {
             Shop With SammyTech
           </p>
         </Link>
-        <Link to="/contact" className="flex items-center gap-3 px-4 py-3.5 group">
+        <Link
+          to="/contact"
+          className="flex items-center gap-3 px-4 py-3.5 group"
+        >
           <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
             <Truck size={16} />
           </div>
           <p className="text-xs font-semibold text-neutral-800 group-hover:text-primary-600 transition-colors">
-           Sell Your Phone at Ease
+            Sell Your Phone at Ease
           </p>
         </Link>
         <Link to="/swap" className="flex items-center gap-3 px-4 py-3.5 group">
@@ -156,7 +244,7 @@ function CtaSidebar() {
             <RefreshCw size={16} />
           </div>
           <p className="text-xs font-semibold text-neutral-800 group-hover:text-primary-600 transition-colors">
-         SWAP or SELL YOUR PHONE
+            SWAP or SELL YOUR PHONE
           </p>
         </Link>
       </div>
@@ -255,7 +343,11 @@ function FastDeliveryModal({ onClose }) {
 
         <div className="px-7 pt-9 pb-7 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#07b6b018]">
-            <Truck size={26} className="text-primary-600" style={{ color: "#07b6b0" }} />
+            <Truck
+              size={26}
+              className="text-primary-600"
+              style={{ color: "#07b6b0" }}
+            />
           </div>
 
           <h2 className="flex items-center justify-center gap-2 text-lg font-extrabold text-neutral-800">
@@ -336,7 +428,9 @@ function SecurePaymentModal({ onClose }) {
             <ShieldCheck size={26} className="text-blue-500" />
           </div>
 
-          <h2 className="text-lg font-extrabold text-neutral-800">Secure Payment</h2>
+          <h2 className="text-lg font-extrabold text-neutral-800">
+            Secure Payment
+          </h2>
           <p className="mt-2 text-sm text-neutral-500 leading-relaxed">
             Your payment is protected with bank-level encryption. We never store
             your card details on our servers.
@@ -344,11 +438,29 @@ function SecurePaymentModal({ onClose }) {
 
           <div className="mt-6 flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-3">
             {[
-              { Icon: Lock, color: "#22c55e", title: "SSL Secured", label: "256-bit encryption" },
-              { Icon: CreditCard, color: "#3b82f6", title: "Paystack", label: "Secure Payments" },
-              { Icon: ShieldCheck, color: "#22c55e", title: "100% Genuine", label: "Authentic Products" },
+              {
+                Icon: Lock,
+                color: "#22c55e",
+                title: "SSL Secured",
+                label: "256-bit encryption",
+              },
+              {
+                Icon: CreditCard,
+                color: "#3b82f6",
+                title: "Paystack",
+                label: "Secure Payments",
+              },
+              {
+                Icon: ShieldCheck,
+                color: "#22c55e",
+                title: "100% Genuine",
+                label: "Authentic Products",
+              },
             ].map(({ Icon, color, title, label }) => (
-              <div key={title} className="flex flex-1 flex-col items-center gap-1 px-1">
+              <div
+                key={title}
+                className="flex flex-1 flex-col items-center gap-1 px-1"
+              >
                 <Icon size={18} style={{ color }} />
                 <span className="text-[11px] font-bold text-neutral-700 leading-tight text-center">
                   {title}
@@ -485,9 +597,9 @@ function SupportModal({ onClose }) {
           </h2>
 
           <p className="mt-4 text-sm text-neutral-600 leading-relaxed">
-            Have a question before you buy, or need help after delivery?
-            Reach us anytime by email or through our contact form — we
-            typically reply within{" "}
+            Have a question before you buy, or need help after delivery? Reach
+            us anytime by email or through our contact form — we typically reply
+            within{" "}
             <span className="font-semibold" style={{ color: "#f59e0b" }}>
               24 hours
             </span>
@@ -526,7 +638,9 @@ function SupportModal({ onClose }) {
               <a
                 key={title}
                 href={href}
-                {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                {...(external
+                  ? { target: "_blank", rel: "noopener noreferrer" }
+                  : {})}
                 className="flex flex-1 flex-col items-center gap-1 px-1 rounded-lg py-1.5 transition-colors hover:bg-neutral-50"
               >
                 <Icon size={18} style={{ color: "#f59e0b" }} />
@@ -614,7 +728,6 @@ export default function Home() {
 
   return (
     <div>
-       
       {/* ── Promo Banner ──────────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 py-4 lg:py-6">
         <div className="flex items-stretch gap-4">
@@ -651,8 +764,12 @@ export default function Home() {
         </div>
       </div>
 
-    
- {/* ── Feature Badges ────────────────────────────────────────────────────── */}
+      {/* ── Browse Categories ─────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-7xl px-4 mt-8">
+        <BrowseCategories categories={categories} />
+      </div>
+
+      {/* ── Feature Badges ────────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 mt-4">
         <div className="grid grid-cols-2 md:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-neutral-100 rounded-2xl border border-neutral-200 bg-white shadow-sm">
           {FEATURE_BADGES.map((feature) => {
@@ -669,7 +786,9 @@ export default function Home() {
                   <p className="text-xs font-semibold text-neutral-800 truncate">
                     {title}
                   </p>
-                  <p className="text-[10px] text-neutral-400 truncate">{desc}</p>
+                  <p className="text-[10px] text-neutral-400 truncate">
+                    {desc}
+                  </p>
                 </div>
               </button>
             );
@@ -688,9 +807,9 @@ export default function Home() {
       {activeFeature && activeFeature.title === "24/7 Support" && (
         <SupportModal onClose={() => setActiveFeature(null)} />
       )}
-         {/* ── Best Selling ────────────────────────────────────────────────────── */}
-          <div className="mx-auto max-w-7xl px-4 mt-8">
-{bestSelling.length > 0 && (
+      {/* ── Best Selling ────────────────────────────────────────────────────── */}
+      <div className="mx-auto max-w-7xl px-4 mt-8">
+        {bestSelling.length > 0 && (
           <section>
             <SectionHeader
               icon={Star}
@@ -702,22 +821,22 @@ export default function Home() {
             <ProductCarousel products={bestSelling} delay={2000} />
           </section>
         )}
-
-          </div>
-        
+      </div>
 
       {/* ── Swap CTA ──────────────────────────────────────────────────────────── */}
       <div className="mx-auto max-w-7xl px-4 mt-8">
         <Link
           to="/swap"
-        
           className="relative flex items-center gap-4 overflow-hidden justify-center rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-primary-700 px-5 py-6 text-white sm:px-10 sm:py-7"
         >
           {/* <img src="/swap-desktop.jpg" className="hidden md:block border round-sm"/>
           <img src="/swap.jpeg" className="md:hidden border round-sm"/> */}
           {/* Decorative phone stack, faded into the background */}
           <div className="hidden items-center justify-center gap-1 w-[250px] md:w-[300px] sm:flex">
-            <img src="/phones.png" className="absolute bottom-0 w-[250px] md:w-[300px]"/>
+            <img
+              src="/phones.png"
+              className="absolute bottom-0 w-[250px] md:w-[300px]"
+            />
           </div>
 
           <div className="relative z-10 hidden md:flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20">
@@ -725,20 +844,22 @@ export default function Home() {
           </div>
 
           <div className="relative z-10 min-w-0">
-            <p className="text-lg font-extrabold leading-tight sm:text-xl">Want to Swap or Sell?</p>
+            <p className="text-lg font-extrabold leading-tight sm:text-xl">
+              Want to Swap or Sell?
+            </p>
             <p className="mt-0.5 text-sm text-primary-100 max-w-[300px]">
               Trade in your old phone and get the best value today.
             </p>
             <span className="mt-3 inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs md:text-sm font-bold text-primary-700 shadow-md transition-colors hover:bg-primary-50">
-              <Smartphone size={15} />   <ArrowLeftRight size={20} />   <Smartphone size={15} /> SWAP or SELL YOUR PHONE <ChevronRight size={15} />
+              <Smartphone size={15} /> <ArrowLeftRight size={20} />{" "}
+              <Smartphone size={15} /> SWAP or SELL YOUR PHONE{" "}
+              <ChevronRight size={15} />
             </span>
           </div>
         </Link>
       </div>
 
       <main className="mx-auto max-w-7xl px-4 py-10 space-y-14">
-       
-
         {/* ── Deal of the Day ─────────────────────────────────────────────────── */}
         {dealOfDay.length > 0 && (
           <section>
