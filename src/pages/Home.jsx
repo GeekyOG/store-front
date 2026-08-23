@@ -6,12 +6,14 @@ import {
   ChevronRight,
   Truck,
   ShieldCheck,
-  RefreshCw,
   Headphones,
   Package,
   Tag,
   Phone,
   Store,
+  Heart,
+  BadgePercent,
+  Eye,
 } from "lucide-react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
@@ -46,12 +48,12 @@ function ProductCarousel({ products, delay = 2000, reverse = false }) {
       }}
     >
       {products.map((p) => {
-        
-        return(
-        <SwiperSlide key={p.id}>
-          <ProductCard product={p}  />
-        </SwiperSlide>
-      )})}
+        return (
+          <SwiperSlide key={p.id}>
+            <ProductCard product={p} />
+          </SwiperSlide>
+        );
+      })}
     </Swiper>
   );
 }
@@ -74,7 +76,7 @@ function BannerSlider({ banners }) {
           <img
             src={banner}
             alt={`Promotion ${index + 1}`}
-            className="w-full h-full object-cover object-center"
+            className="w-full border h-full object-cover object-center"
           />
         </SwiperSlide>
       ))}
@@ -88,6 +90,33 @@ function CategorySidebar({ categories }) {
     <aside className="hidden lg:block w-56 shrink-0">
       <div className="h-full min-h-[320px] rounded-2xl border border-neutral-200 bg-white overflow-y-auto">
         <ul className="divide-y divide-neutral-50">
+          <li>
+            <a
+              href="#best-selling"
+              className="flex items-center gap-2.5 px-4 py-3 text-sm text-neutral-600 hover:bg-neutral-50 hover:text-primary-600 transition-colors"
+            >
+              <Star size={15} className="text-secondary-500 shrink-0" />
+              <span className="truncate">Best Sellers</span>
+            </a>
+          </li>
+          <li>
+            <Link
+              to="/products?sort=most-viewed"
+              className="flex items-center gap-2.5 px-4 py-3 text-sm text-neutral-600 hover:bg-neutral-50 hover:text-primary-600 transition-colors"
+            >
+              <Eye size={15} className="text-neutral-300 shrink-0" />
+              <span className="truncate">Most Viewed</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              to="/wishlist"
+              className="flex items-center gap-2.5 px-4 py-3 text-sm text-neutral-600 hover:bg-neutral-50 hover:text-primary-600 transition-colors"
+            >
+              <Heart size={15} className="text-neutral-300 shrink-0" />
+              <span className="truncate">Wishlist</span>
+            </Link>
+          </li>
           {categories?.slice(0, 8).map((cat) => (
             <li key={cat.id}>
               <Link
@@ -110,18 +139,24 @@ function CtaSidebar() {
   return (
     <aside className="hidden xl:flex flex-col gap-2 w-56 shrink-0">
       <div className="rounded-2xl border border-neutral-200 bg-white divide-y divide-neutral-50">
-        <a href="tel:+2347038784788" className="flex items-center gap-3 px-4 py-3.5 group">
+        <a
+          href="tel:+2347065316098"
+          className="flex items-center gap-3 px-4 py-3.5 group"
+        >
           <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
             <Phone size={16} />
           </div>
           <div className="min-w-0">
             <p className="text-[11px] text-neutral-400">Call to order</p>
             <p className="text-xs font-semibold text-neutral-800 truncate group-hover:text-primary-600 transition-colors">
-              +234 703 878 4788
+              +234 706 531 6098
             </p>
           </div>
         </a>
-        <Link to="/contact" className="flex items-center gap-3 px-4 py-3.5 group">
+        <Link
+          to="/contact"
+          className="flex items-center gap-3 px-4 py-3.5 group"
+        >
           <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
             <Store size={16} />
           </div>
@@ -129,7 +164,10 @@ function CtaSidebar() {
             Shop With MyFlexShop
           </p>
         </Link>
-        <Link to="/contact" className="flex items-center gap-3 px-4 py-3.5 group">
+        <Link
+          to="/contact"
+          className="flex items-center gap-3 px-4 py-3.5 group"
+        >
           <div className="h-9 w-9 rounded-full border border-primary-200 flex items-center justify-center text-primary-600 shrink-0">
             <Truck size={16} />
           </div>
@@ -137,14 +175,13 @@ function CtaSidebar() {
             Send Your Packages
           </p>
         </Link>
-        
       </div>
 
       <Link
         to="/products"
         className="flex-1 min-h-[140px] rounded-2xl bg-gradient-to-br from-primary-700 via-primary-600 to-primary-500 text-white p-5 flex flex-col justify-end"
       >
-        <p className="text-[11px] font-bold uppercase tracking-widest text-white/70">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-secondary-300">
           Exclusive
         </p>
         <p className="text-xl font-extrabold leading-tight mt-1">
@@ -251,7 +288,7 @@ export default function Home() {
             ) : (
               <div className="h-full bg-gradient-to-br from-primary-700 via-primary-600 to-primary-500 text-white">
                 <div className="px-6 sm:px-10 py-16 flex flex-col items-start gap-4">
-                  <span className="text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full">
+                  <span className="text-xs font-bold uppercase tracking-widest bg-secondary-400 text-primary-900 px-3 py-1 rounded-full">
                     Limited Time Offer
                   </span>
                   <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight max-w-lg">
@@ -285,7 +322,7 @@ export default function Home() {
               bg: "#07b6b018",
               color: "#07b6b0",
               title: "Fast Delivery",
-              desc: "Quick & reliable shipping",
+              desc: "Within 24 business hours of ordering",
             },
             {
               Icon: ShieldCheck,
@@ -295,11 +332,11 @@ export default function Home() {
               desc: "100% secure transactions",
             },
             {
-              Icon: RefreshCw,
+              Icon: BadgePercent,
               bg: "#8b5cf618",
               color: "#8b5cf6",
-              title: "Easy Returns",
-              desc: "Hassle-free return policy",
+              title: "No Hidden Fees",
+              desc: "Zero interest, transparent pricing",
             },
             {
               Icon: Headphones,
@@ -330,12 +367,10 @@ export default function Home() {
         </div>
       </div>
 
-   
-
       <main className="mx-auto max-w-7xl px-4 py-10 space-y-14">
         {/* ── Best Selling ────────────────────────────────────────────────────── */}
         {bestSelling.length > 0 && (
-          <section>
+          <section id="best-selling">
             <SectionHeader
               icon={Star}
               iconBg="#fef3c720"

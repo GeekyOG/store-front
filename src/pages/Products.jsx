@@ -226,6 +226,7 @@ export default function Products() {
   const [search, setSearch] = useState(urlSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(urlSearch);
 
+  const sort = searchParams.get("sort") ?? "";
   const [categoryId, setCategoryId] = useState(searchParams.get("category") ?? "");
   const [subcategoryId, setSubcategoryId] = useState("");
   const [minPrice, setMinPrice] = useState("");
@@ -277,6 +278,7 @@ export default function Products() {
     ...(subcategoryId && { subcategoryId }),
     ...(minPrice && { minPrice }),
     ...(maxPrice && { maxPrice }),
+    ...(sort && { sort }),
     page,
     limit: 24,
   };
@@ -345,7 +347,9 @@ export default function Products() {
           {/* Title row */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-xl font-bold text-neutral-800">All Products</h1>
+              <h1 className="text-xl font-bold text-neutral-800">
+                {sort === "most-viewed" ? "Most Viewed" : "All Products"}
+              </h1>
               {!isLoading && (
                 <p className="text-sm text-neutral-400 mt-0.5">
                   {total} product{total !== 1 ? "s" : ""}

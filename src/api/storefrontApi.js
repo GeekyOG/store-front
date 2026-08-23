@@ -3,7 +3,6 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 const BASE_URL = "https://api.myflexishop.com/api/v1";
 // const BASE_URL = "http://localhost:8000/api/v1";
 
-
 export const storefrontApi = createApi({
   reducerPath: "storefrontApi",
   baseQuery: fetchBaseQuery({
@@ -38,32 +37,60 @@ export const storefrontApi = createApi({
       providesTags: ["Categories"],
     }),
     submitContactMessage: builder.mutation({
-      query: (body) => ({ url: "/storefront/public/contact", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/public/contact",
+        method: "POST",
+        body,
+      }),
     }),
 
     // ── Customer auth ─────────────────────────────────────────────────────────
     register: builder.mutation({
-      query: (body) => ({ url: "/storefront/auth/register", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/auth/register",
+        method: "POST",
+        body,
+      }),
     }),
     login: builder.mutation({
-      query: (body) => ({ url: "/storefront/auth/login", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/auth/login",
+        method: "POST",
+        body,
+      }),
     }),
     forgotPassword: builder.mutation({
-      query: (body) => ({ url: "/storefront/auth/forgot-password", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/auth/forgot-password",
+        method: "POST",
+        body,
+      }),
     }),
     resetPassword: builder.mutation({
-      query: (body) => ({ url: "/storefront/auth/reset-password", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/auth/reset-password",
+        method: "POST",
+        body,
+      }),
     }),
     getMe: builder.query({
       query: () => "/storefront/auth/me",
       providesTags: ["Customer"],
     }),
     updateProfile: builder.mutation({
-      query: (body) => ({ url: "/storefront/auth/profile", method: "PUT", body }),
+      query: (body) => ({
+        url: "/storefront/auth/profile",
+        method: "PUT",
+        body,
+      }),
       invalidatesTags: ["Customer"],
     }),
     updatePassword: builder.mutation({
-      query: (body) => ({ url: "/storefront/auth/password", method: "PUT", body }),
+      query: (body) => ({
+        url: "/storefront/auth/password",
+        method: "PUT",
+        body,
+      }),
     }),
     getReferralSummary: builder.query({
       query: () => "/storefront/auth/referrals",
@@ -76,11 +103,19 @@ export const storefrontApi = createApi({
       providesTags: ["Kyc"],
     }),
     submitKyc: builder.mutation({
-      query: (formData) => ({ url: "/storefront/kyc", method: "POST", body: formData }),
+      query: (formData) => ({
+        url: "/storefront/kyc",
+        method: "POST",
+        body: formData,
+      }),
       invalidatesTags: ["Kyc"],
     }),
     resubmitKyc: builder.mutation({
-      query: (formData) => ({ url: "/storefront/kyc", method: "PUT", body: formData }),
+      query: (formData) => ({
+        url: "/storefront/kyc",
+        method: "PUT",
+        body: formData,
+      }),
       invalidatesTags: ["Kyc"],
     }),
 
@@ -102,21 +137,39 @@ export const storefrontApi = createApi({
 
     // ── Discount codes ─────────────────────────────────────────────────────
     validateDiscountCode: builder.mutation({
-      query: (body) => ({ url: "/storefront/discount-codes/validate", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/discount-codes/validate",
+        method: "POST",
+        body,
+      }),
     }),
 
     // ── Payments: Paystack ───────────────────────────────────────────────────
     initializePaystackPayment: builder.mutation({
-      query: (body) => ({ url: "/storefront/payments/paystack/initialize", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/payments/paystack/initialize",
+        method: "POST",
+        body,
+      }),
     }),
     verifyPaystackPayment: builder.mutation({
-      query: (reference) => ({ url: `/storefront/payments/paystack/verify/${reference}`, method: "GET" }),
+      query: (reference) => ({
+        url: `/storefront/payments/paystack/verify/${reference}`,
+        method: "GET",
+      }),
     }),
 
     // ── Shipping fees ───────────────────────────────────────────────────────
     getShippingFees: builder.query({
       query: () => "/storefront/shipping-fees",
       providesTags: ["ShippingFee"],
+    }),
+    quoteDelivery: builder.mutation({
+      query: (body) => ({
+        url: "/storefront/public/delivery/quote",
+        method: "POST",
+        body,
+      }),
     }),
 
     // ── Phone swap ──────────────────────────────────────────────────────────
@@ -130,7 +183,11 @@ export const storefrontApi = createApi({
       query: () => "/storefront/public/swap-options",
     }),
     getSwapQuote: builder.mutation({
-      query: (body) => ({ url: "/storefront/public/swap-quote", method: "POST", body }),
+      query: (body) => ({
+        url: "/storefront/public/swap-quote",
+        method: "POST",
+        body,
+      }),
     }),
   }),
 });
@@ -158,6 +215,7 @@ export const {
   useGetOrderByNumberQuery,
   useValidateDiscountCodeMutation,
   useGetShippingFeesQuery,
+  useQuoteDeliveryMutation,
   useInitializePaystackPaymentMutation,
   useVerifyPaystackPaymentMutation,
   useGetSwapModelsQuery,

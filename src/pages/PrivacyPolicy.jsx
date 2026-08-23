@@ -66,7 +66,7 @@ const SECTIONS = [
   {
     title: "9. Contact Us",
     body: [
-      `If you have any questions about this Privacy Policy, reach out to us at support@MyFlexShopgadgets.com or +234 703 878 4788.`,
+      `If you have any questions about this Privacy Policy, reach out to us at myflexishops@gmail.com or +234 706 531 6098.`,
     ],
   },
 ];

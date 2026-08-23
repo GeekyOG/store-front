@@ -77,7 +77,7 @@ const SECTIONS = [
   {
     title: "11. Contact Us",
     body: [
-      `Questions about these terms? Reach us at support@MyFlexShopgadgets.com or +234 703 878 4788.`,
+      `Questions about these terms? Reach us at myflexishops@gmail.com or +234 706 531 6098.`,
     ],
   },
 ];

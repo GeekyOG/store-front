@@ -205,7 +205,7 @@ export default function Cart() {
               </div>
               <div className="border-t border-neutral-100 pt-2.5 flex justify-between font-bold text-neutral-800 text-base">
                 <span>Total</span>
-                <span className="text-primary-600">₦{subtotal.toLocaleString()}</span>
+                <span className="text-secondary-700">₦{subtotal.toLocaleString()}</span>
               </div>
             </div>
 

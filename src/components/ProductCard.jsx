@@ -104,7 +104,7 @@ export default function ProductCard({ product }) {
         </h3>
         <div className="flex items-center justify-between gap-2 mt-1">
           <div className="flex items-baseline gap-1.5 min-w-0">
-            <span className="text-base font-bold text-primary-600">
+            <span className="text-base font-bold text-secondary-700">
               ₦{price?.toLocaleString()}
             </span>
             {hasDiscount && (

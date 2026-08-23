@@ -1,8 +1,21 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  Search, ShoppingCart, X, Package, ChevronRight,
-  Mail, Phone, MapPin, UserCircle, LogOut, User, Heart, Menu,
+  Search,
+  ShoppingCart,
+  X,
+  Package,
+  ChevronRight,
+  Mail,
+  Phone,
+  MapPin,
+  UserCircle,
+  LogOut,
+  User,
+  Heart,
+  Menu,
+  Facebook,
+  Instagram,
 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentCustomer, logout } from "../store/authSlice";
@@ -20,6 +33,46 @@ const NAV_LINKS = [
   { to: "/about", label: "About Us" },
   { to: "/contact", label: "Contact" },
 ];
+
+const SOCIAL_LINKS = [
+  {
+    href: "https://www.facebook.com/share/1GbHdjLAAq/",
+    label: "Facebook",
+    Icon: Facebook,
+  },
+  {
+    href: "https://www.instagram.com/myflexishop?igsh=NjFrOWJyc3dlZGRp",
+    label: "Instagram",
+    Icon: Instagram,
+  },
+  {
+    href: "https://www.threads.com/@myflexishop",
+    label: "Threads",
+    Icon: ThreadsIcon,
+  },
+  {
+    href: "https://www.tiktok.com/@myflexishop?_t=ZS-903LCJSQLqK&_r=1",
+    label: "TikTok",
+    Icon: TikTokIcon,
+  },
+];
+
+// ── Brand icons not covered by lucide-react ───────────────────────────────────
+function ThreadsIcon(props) {
+  return (
+    <svg viewBox="0 0 192 192" fill="currentColor" {...props}>
+      <path d="M141.537 88.988a67.128 67.128 0 0 0-2.518-1.143c-1.482-27.307-16.403-42.94-41.457-43.1-.108 0-.216 0-.324 0-14.906 0-27.302 6.365-34.922 17.939l13.706 9.4c5.708-8.66 14.655-10.505 21.242-10.505.083 0 .167 0 .25.001 8.235.053 14.448 2.446 18.464 7.107 2.921 3.396 4.874 8.093 5.852 14.05-7.302-1.24-15.211-1.621-23.665-1.135-23.809 1.371-39.108 15.312-38.076 34.687.523 9.828 5.398 18.253 13.727 23.722 7.045 4.626 16.126 6.891 25.557 6.378 12.498-.68 22.302-5.462 29.14-14.212 5.194-6.65 8.475-15.26 9.938-26.245 5.972 3.605 10.393 8.353 12.821 14.045 4.113 9.639 4.363 25.495-8.517 38.376-11.281 11.281-24.858 16.157-45.373 16.312-22.766-.171-39.945-7.476-51.058-21.716-10.408-13.34-15.786-32.632-15.988-57.34.202-24.708 5.58-44 15.988-57.34 11.113-14.24 28.292-21.545 51.058-21.716 22.928.172 40.407 7.514 51.944 21.822 10.658 13.219 16.169 31.633 16.386 54.74l17.021-.028c-.263-27.312-6.986-49.583-19.988-66.246C133.998 3.13 111.762-4.32 84.03-4.5H83.9c-27.66.18-49.62 7.643-65.284 22.19C2.9 32.61-3.982 53.31-4.5 84.5v.001c.518 31.19 7.4 51.89 23.116 67.11 15.664 14.547 37.624 22.01 65.284 22.19h.13c25.31-.207 42.964-6.902 57.283-21.708 18.71-19.343 18.17-43.556 12.005-58.475-4.42-10.68-12.836-19.32-24.281-24.63Zm-45.037 46.5c-9.53.528-19.436-3.783-19.928-13.017-.365-6.856 4.898-14.508 20.507-15.406a92.02 92.02 0 0 1 5.395-.157c5.803 0 11.238.532 16.184 1.55-1.845 22.914-12.669 26.612-22.158 27.03Z" />
+    </svg>
+  );
+}
+
+function TikTokIcon(props) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M16.6 5.82c-1.03-.87-1.7-2.1-1.86-3.5h-3.03v13.4a2.99 2.99 0 1 1-2.99-3.03c.29 0 .58.05.85.14V9.66a6.03 6.03 0 0 0-.85-.06 6.05 6.05 0 1 0 6.05 6.05V8.44a8.16 8.16 0 0 0 4.76 1.53V6.94a4.85 4.85 0 0 1-2.93-1.12Z" />
+    </svg>
+  );
+}
 
 // ── Search bar with live suggestions ──────────────────────────────────────────
 function SearchBar({ mobile = false }) {
@@ -44,7 +97,8 @@ function SearchBar({ mobile = false }) {
   // Close when clicking outside
   useEffect(() => {
     const handler = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target))
+        setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -59,10 +113,16 @@ function SearchBar({ mobile = false }) {
     setQuery("");
   };
 
-  const dismiss = () => { setQuery(""); setOpen(false); };
+  const dismiss = () => {
+    setQuery("");
+    setOpen(false);
+  };
 
   return (
-    <div ref={wrapRef} className={`relative ${mobile ? "w-full" : "flex-1 max-w-xl mx-auto"}`}>
+    <div
+      ref={wrapRef}
+      className={`relative ${mobile ? "w-full" : "flex-1 max-w-xl mx-auto"}`}
+    >
       <form onSubmit={handleSubmit}>
         <div className="relative border border-neutral-200 rounded-xl bg-white shadow-sm focus-within:ring-2 focus-within:ring-primary-500 transition-all">
           <Search
@@ -71,7 +131,10 @@ function SearchBar({ mobile = false }) {
           />
           <input
             value={query}
-            onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            }}
             onFocus={() => debounced.trim().length >= 2 && setOpen(true)}
             placeholder="Search for products…"
             className="w-full pl-9 pr-9 py-2 rounded-xl border-0 text-sm bg-white outline-none shadow-sm placeholder:text-neutral-400 focus:ring-2 focus:ring-white/20 transition-all"
@@ -103,7 +166,9 @@ function SearchBar({ mobile = false }) {
           {!isFetching && suggestions.length === 0 && (
             <div className="px-4 py-4 text-sm text-neutral-400 text-center">
               No results for{" "}
-              <span className="font-semibold text-neutral-600">"{debounced}"</span>
+              <span className="font-semibold text-neutral-600">
+                "{debounced}"
+              </span>
             </div>
           )}
 
@@ -125,7 +190,10 @@ function SearchBar({ mobile = false }) {
                   <Link
                     key={product.id}
                     to={`/products/${product.id}`}
-                    onClick={() => { setOpen(false); setQuery(""); }}
+                    onClick={() => {
+                      setOpen(false);
+                      setQuery("");
+                    }}
                     className="flex items-center gap-3 px-3.5 py-2.5 hover:bg-primary-50 transition-colors border-t border-neutral-50 group"
                   >
                     {/* Thumbnail */}
@@ -151,7 +219,8 @@ function SearchBar({ mobile = false }) {
                       {product.Category && (
                         <p className="text-[10px] text-neutral-400 truncate mt-0.5">
                           {product.Category.name}
-                          {product.Subcategory && ` · ${product.Subcategory.name}`}
+                          {product.Subcategory &&
+                            ` · ${product.Subcategory.name}`}
                         </p>
                       )}
                     </div>
@@ -174,7 +243,10 @@ function SearchBar({ mobile = false }) {
               {/* See all */}
               <Link
                 to={`/products?search=${encodeURIComponent(debounced.trim())}`}
-                onClick={() => { setOpen(false); setQuery(""); }}
+                onClick={() => {
+                  setOpen(false);
+                  setQuery("");
+                }}
                 className="flex items-center justify-center gap-1.5 px-3.5 py-3 bg-neutral-50 hover:bg-primary-50 text-sm text-primary-600 font-semibold border-t border-neutral-100 transition-colors"
               >
                 See all results for "{debounced}"
@@ -191,7 +263,7 @@ function SearchBar({ mobile = false }) {
 // ── Wishlist button ────────────────────────────────────────────────────────────
 function WishlistButton() {
   const navigate = useNavigate();
-  const count    = useSelector(selectWishlistCount);
+  const count = useSelector(selectWishlistCount);
   return (
     <button
       onClick={() => navigate("/wishlist")}
@@ -211,7 +283,7 @@ function WishlistButton() {
 // ── Cart button ────────────────────────────────────────────────────────────────
 function CartButton() {
   const navigate = useNavigate();
-  const count    = useSelector(selectCartCount);
+  const count = useSelector(selectCartCount);
   return (
     <button
       onClick={() => navigate("/cart")}
@@ -256,7 +328,8 @@ function UserMenu() {
     );
   }
 
-  const initials = `${customer.first_name?.[0] ?? ""}${customer.last_name?.[0] ?? ""}`.toUpperCase();
+  const initials =
+    `${customer.first_name?.[0] ?? ""}${customer.last_name?.[0] ?? ""}`.toUpperCase();
 
   return (
     <div ref={ref} className="relative">
@@ -278,7 +351,9 @@ function UserMenu() {
             <p className="text-xs font-bold text-neutral-800">
               {customer.first_name} {customer.last_name}
             </p>
-            <p className="text-[11px] text-neutral-400 truncate mt-0.5">{customer.email}</p>
+            <p className="text-[11px] text-neutral-400 truncate mt-0.5">
+              {customer.email}
+            </p>
           </div>
           <div className="py-1">
             <Link
@@ -290,7 +365,11 @@ function UserMenu() {
               My Account
             </Link>
             <button
-              onClick={() => { dispatch(logout()); setOpen(false); navigate("/"); }}
+              onClick={() => {
+                dispatch(logout());
+                setOpen(false);
+                navigate("/");
+              }}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition-colors"
             >
               <LogOut size={14} />
@@ -336,7 +415,9 @@ export default function Layout() {
   return (
     <div className="min-h-screen bg-neutral-100 font-sans flex flex-col">
       <ScrollToTop />
-      {showWelcomePopup && <WelcomeDiscountModal onClose={dismissWelcomePopup} />}
+      {showWelcomePopup && (
+        <WelcomeDiscountModal onClose={dismissWelcomePopup} />
+      )}
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <header className="sticky top-0 z-30 bg-neutral-50 shadow-md">
         <div className="mx-auto max-w-7xl px-4 h-14 flex items-center gap-4">
@@ -352,7 +433,7 @@ export default function Layout() {
 
           {/* Logo */}
           <Link to="/" className="shrink-0">
-            <img src="/logo.png" alt="MyFlexShop" className="h-20 w-auto" />
+            <img src="/logo.png" alt="MyFlexShop" className="h-11 w-auto" />
           </Link>
 
           {/* Desktop search */}
@@ -456,18 +537,36 @@ export default function Layout() {
           <div className="space-y-3">
             <p className="font-extrabold text-xl text-white">MyFlexShop</p>
             <p className="text-neutral-400 text-sm leading-relaxed">
-              Your trusted online marketplace for quality products at fair prices.
+              Your trusted online marketplace for quality products at fair
+              prices.
             </p>
             <div className="flex items-center gap-2 mt-2">
               <div className="h-1.5 w-8 rounded-full bg-primary-500" />
               <div className="h-1.5 w-4 rounded-full bg-primary-700" />
               <div className="h-1.5 w-2 rounded-full bg-primary-800" />
             </div>
+            <div className="flex items-center gap-2 pt-1">
+              {SOCIAL_LINKS.map(({ href, label, Icon }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  title={label}
+                  className="h-8 w-8 rounded-full border border-neutral-700 flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-primary-400 hover:border-primary-400 transition-colors"
+                >
+                  <Icon />
+                </a>
+              ))}
+            </div>
           </div>
 
           {/* Quick links */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 mb-4">Quick Links</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 mb-4">
+              Quick Links
+            </p>
             <ul className="space-y-2.5">
               {[
                 { to: "/", label: "Home" },
@@ -490,19 +589,34 @@ export default function Layout() {
 
           {/* Contact */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 mb-4">Contact Us</p>
+            <p className="text-xs font-bold uppercase tracking-widest text-neutral-400 mb-4">
+              Contact Us
+            </p>
             <ul className="space-y-3">
-              {/* <li className="flex items-start gap-2.5">
-                <MapPin size={14} className="text-primary-400 mt-0.5 shrink-0" />
-                <span className="text-sm text-neutral-400">Okorodafe Roundabout, Market Rd, Oteri 333105, Delta, Nigeria</span>
-              </li> */}
-              <li className="flex items-center gap-2.5">
-                <Phone size={14} className="text-primary-400 shrink-0" />
-                <span className="text-sm text-neutral-400">+234 703 878 0000</span>
+              <li className="flex items-start gap-2.5">
+                <MapPin
+                  size={14}
+                  className="text-primary-400 mt-0.5 shrink-0"
+                />
+                <span className="text-sm text-neutral-400">
+                  4, Bolaji Ojomu, off Kukoyi, Alapere, Ketu, Lagos
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Phone size={14} className="text-primary-400 mt-0.5 shrink-0" />
+                <span className="text-sm text-neutral-400">
+                  +234 706 531 6098
+                  <br />
+                  +234 812 708 9505
+                  <br />
+                  +234 705 163 7304
+                </span>
               </li>
               <li className="flex items-center gap-2.5">
                 <Mail size={14} className="text-primary-400 shrink-0" />
-                <span className="text-sm text-neutral-400">support@MyFlexShopgadgets.com</span>
+                <span className="text-sm text-neutral-400">
+                  myflexishops@gmail.com
+                </span>
               </li>
             </ul>
           </div>
@@ -515,10 +629,30 @@ export default function Layout() {
               © {new Date().getFullYear()} MyFlexShop. All rights reserved.
             </p>
             <div className="flex items-center gap-4">
-              <Link to="/about" className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">About</Link>
-              <Link to="/contact" className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">Contact</Link>
-              <Link to="/privacy-policy" className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">Privacy Policy</Link>
-              <Link to="/terms-and-conditions" className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors">Terms &amp; Conditions</Link>
+              <Link
+                to="/about"
+                className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+              >
+                About
+              </Link>
+              <Link
+                to="/contact"
+                className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+              >
+                Contact
+              </Link>
+              <Link
+                to="/privacy-policy"
+                className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                to="/terms-and-conditions"
+                className="text-xs text-neutral-500 hover:text-neutral-300 transition-colors"
+              >
+                Terms &amp; Conditions
+              </Link>
             </div>
           </div>
         </div>

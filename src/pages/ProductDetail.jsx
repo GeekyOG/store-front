@@ -10,7 +10,7 @@ import {
   ChevronRight,
   ShieldCheck,
   Truck,
-  RefreshCw,
+  BadgePercent,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useGetPublicProductQuery } from "../api/storefrontApi";
@@ -333,7 +333,7 @@ export default function ProductDetail() {
               {[
                 { icon: Truck, label: "Free delivery" },
                 { icon: ShieldCheck, label: "Secure checkout" },
-                { icon: RefreshCw, label: "Easy returns" },
+                { icon: BadgePercent, label: "No hidden fees" },
               ].map(({ icon: Icon, label }) => (
                 <div
                   key={label}

@@ -8,10 +8,22 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectCartItems, selectCartTotal, clearCart } from "../store/cartSlice";
 import { selectCurrentCustomer } from "../store/authSlice";
 import {
-  usePlaceOrderMutation, useValidateDiscountCodeMutation, useGetShippingFeesQuery,
-  useInitializePaystackPaymentMutation, useGetMeQuery,
+  usePlaceOrderMutation, useValidateDiscountCodeMutation,
+  useInitializePaystackPaymentMutation, useGetMeQuery, useQuoteDeliveryMutation,
 } from "../api/storefrontApi";
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
+import { useGoogleMaps } from "../utils/useGoogleMaps";
+
+// Pulls city/state out of a Google Places result. State is matched against
+// our own dropdown list (case-insensitively) so the <select> reflects it;
+// falls back to Google's raw name if it isn't an exact match.
+function parseAddressComponents(components = []) {
+  const find = (type) => components.find((c) => c.types.includes(type))?.long_name ?? "";
+  const city = find("locality") || find("administrative_area_level_2");
+  const rawState = find("administrative_area_level_1");
+  const matchedState = NIGERIA_STATES.find((s) => s.toLowerCase() === rawState.toLowerCase());
+  return { city, state: matchedState || rawState };
+}
 
 const BANK = {
   name: "MyFlexShop",
@@ -53,11 +65,29 @@ export default function Checkout() {
   const [placeOrder, { isLoading }] = usePlaceOrderMutation();
   const [validateDiscountCode, { isLoading: validatingPromo }] = useValidateDiscountCodeMutation();
   const [initializePaystackPayment, { isLoading: initializingPayment }] = useInitializePaystackPaymentMutation();
-  const { data: shippingFees } = useGetShippingFeesQuery();
+  const [quoteDelivery, { isLoading: isQuoting }] = useQuoteDeliveryMutation();
 
   const [promoInput, setPromoInput] = useState("");
   const [promoError, setPromoError] = useState("");
   const [appliedPromo, setAppliedPromo] = useState(null); // { code, discount_amount }
+
+  // Distance-based delivery quote (MyFlexi Shop Delivery Model) is the only
+  // source of shipping cost — there is no flat per-state fallback. It only
+  // resolves once the customer picks a Places suggestion with coordinates;
+  // until then (or if the quote fails) ordering is blocked below.
+  const addressInputRef = useRef(null);
+  const googleLoaded = useGoogleMaps();
+  const [destination, setDestination] = useState(null); // { lat, lng }
+  const [isExpress, setIsExpress] = useState(false);
+  const [deliveryQuote, setDeliveryQuote] = useState(null);
+  const [quoteError, setQuoteError] = useState("");
+
+  // Tracks the last address value we know came from the input's own native
+  // 'input' event (a keystroke, or a nudge we dispatched ourselves below) —
+  // used to tell "the user typed this" apart from "something else set this"
+  // (browser autofill, profile hydration) so the latter can still trigger
+  // Places suggestions instead of leaving the field silently unresolved.
+  const typedAddressRef = useRef("");
 
   const [form, setForm] = useState({
     first_name: customer?.first_name   ?? "",
@@ -94,6 +124,90 @@ export default function Checkout() {
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
 
+  // Attach Google Places Autocomplete to the address field once the SDK is
+  // ready. Selecting a suggestion gives us coordinates for a live delivery
+  // quote, plus city/state to keep the rest of the form in sync.
+  useEffect(() => {
+    const input = addressInputRef.current;
+    if (!googleLoaded || !input) return;
+    const autocomplete = new window.google.maps.places.Autocomplete(input, {
+      componentRestrictions: { country: "ng" },
+      fields: ["formatted_address", "address_components", "geometry"],
+    });
+    const placeListener = autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+      const location = place.geometry?.location;
+      if (!location) return; // customer typed Enter without picking a suggestion
+      const { city, state } = parseAddressComponents(place.address_components);
+      setForm((f) => {
+        const address = place.formatted_address || f.address;
+        typedAddressRef.current = address; // a deliberate pick, not a "change to react to"
+        return { ...f, address, city: city || f.city, state: state || f.state };
+      });
+      setDestination({ lat: location.lat(), lng: location.lng() });
+    });
+
+    // Browser/password-manager autofill sets the field's value directly at
+    // the DOM level — no native 'input' event fires, so neither React nor
+    // the Places widget ever hear about it and suggestions never appear.
+    // `:-webkit-autofill` + `animationstart` (see the <style> below) is the
+    // standard way to detect that; once detected, dispatch a real 'input'
+    // event so both our onChange and Places' own listener react to it.
+    const handleAutofill = (e) => {
+      if (e.animationName !== "onAutoFillStart") return;
+      if (document.activeElement !== input) input.focus();
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    };
+    input.addEventListener("animationstart", handleAutofill);
+
+    return () => {
+      placeListener.remove();
+      input.removeEventListener("animationstart", handleAutofill);
+    };
+  }, [googleLoaded]);
+
+  // Any other way the address can end up changed without a native 'input'
+  // event on the field itself — e.g. prefilled from the customer's saved
+  // profile once it loads (see the hydration effect above) — leaves
+  // `destination` unresolved and the customer stuck. Nudge Places the same
+  // way autofill does whenever the value changes without having gone
+  // through the field's own onChange first.
+  useEffect(() => {
+    if (!googleLoaded || form.address === typedAddressRef.current) return;
+    typedAddressRef.current = form.address;
+    if (!form.address) return;
+    addressInputRef.current?.dispatchEvent(new Event("input", { bubbles: true }));
+  }, [form.address, googleLoaded]);
+
+  // Re-quote (debounced) whenever the resolved destination, express choice,
+  // or cart contents change. There is no per-state flat-fee fallback —
+  // delivery pricing always comes from the Delivery Settings model, so a
+  // failed quote blocks checkout instead of silently substituting a fee.
+  const itemsKey = items.map((i) => `${i.id}:${i.quantity}`).join(",");
+  useEffect(() => {
+    if (!destination) {
+      setDeliveryQuote(null);
+      setQuoteError("");
+      return;
+    }
+    const t = setTimeout(async () => {
+      try {
+        const quote = await quoteDelivery({
+          items: items.map((i) => ({ storefrontProductId: i.id, quantity: i.quantity })),
+          destination: { lat: destination.lat, lng: destination.lng, state: form.state },
+          isExpress,
+        }).unwrap();
+        setDeliveryQuote(quote);
+        setQuoteError("");
+      } catch (err) {
+        setDeliveryQuote(null);
+        setQuoteError(err?.data?.message ?? "Could not calculate delivery fee. Please try again.");
+      }
+    }, 400);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [destination, isExpress, itemsKey]);
+
   // Guest order lookups need the shipping email to prove ownership (see
   // getOrderByNumber); logged-in customers are matched by their account instead.
   const confirmationPath = (orderNumber) =>
@@ -102,8 +216,9 @@ export default function Checkout() {
       : `/order-confirmation/${orderNumber}?email=${encodeURIComponent(form.email.trim())}`;
 
   const discountAmount = appliedPromo?.discount_amount ?? 0;
-  const shippingFee = shippingFees?.find((f) => f.state === form.state)?.fee ?? 0;
+  const shippingFee = deliveryQuote?.total ?? 0;
   const total = Math.max(subtotal - discountAmount + shippingFee, 0);
+  const canPlaceOrder = !!deliveryQuote && !isQuoting;
 
   const handleApplyPromo = async () => {
     const code = promoInput.trim();
@@ -145,6 +260,7 @@ export default function Checkout() {
     if (!form.address.trim())  e.address  = "Required";
     if (!form.city.trim())     e.city     = "Required";
     if (!form.state.trim())    e.state    = "Required";
+    if (!destination)          e.address  = e.address ?? "Select your address from the suggestions to calculate delivery";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -152,6 +268,10 @@ export default function Checkout() {
   const handleSubmit = async (ev) => {
     ev.preventDefault();
     if (!validate()) return;
+    if (!deliveryQuote) {
+      setServerError(quoteError || "Delivery fee is still being calculated. Please wait a moment and try again.");
+      return;
+    }
     setServerError("");
     try {
       const payload = {
@@ -167,10 +287,13 @@ export default function Checkout() {
           address: form.address.trim(),
           city:    form.city.trim(),
           state:   form.state.trim(),
+          lat:     destination?.lat,
+          lng:     destination?.lng,
         },
         payment_method: payment,
         notes: form.notes.trim() || undefined,
         coupon_code: appliedPromo?.code || undefined,
+        isExpress,
       };
       const res = await placeOrder(payload).unwrap();
       dispatch(clearCart());
@@ -247,7 +370,27 @@ export default function Checkout() {
               </div>
 
               <Field label="Delivery Address" error={errors.address} required>
-                <input value={form.address} onChange={set("address")} placeholder="123 Street Name" className={inputCls(errors.address)} />
+                {/* :-webkit-autofill + animationstart is how the effect above
+                    detects browser/password-manager autofill on this field —
+                    see the "handleAutofill" listener. */}
+                <style>{`
+                  @keyframes onAutoFillStart { from { opacity: 1; } to { opacity: 1; } }
+                  .checkout-address-input:-webkit-autofill { animation-name: onAutoFillStart; }
+                `}</style>
+                <input
+                  ref={addressInputRef}
+                  value={form.address}
+                  onChange={(e) => {
+                    typedAddressRef.current = e.target.value;
+                    set("address")(e);
+                    setDestination(null);
+                  }}
+                  placeholder={googleLoaded ? "Start typing your address…" : "123 Street Name"}
+                  className={`checkout-address-input ${inputCls(errors.address)}`}
+                />
+                {destination && (
+                  <p className="mt-1 text-[11px] text-emerald-600">Address confirmed — delivery fee calculated below.</p>
+                )}
               </Field>
 
               <div className="grid grid-cols-2 gap-4">
@@ -263,6 +406,34 @@ export default function Checkout() {
                   </select>
                 </Field>
               </div>
+
+              <Field label="Delivery Speed">
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    { value: false, label: "Standard", desc: "Regular delivery" },
+                    { value: true, label: "Express", desc: "Faster, for an extra fee" },
+                  ].map(({ value, label, desc }) => (
+                    <label
+                      key={label}
+                      className={`flex flex-col rounded-xl border-2 p-3 cursor-pointer transition-all ${
+                        isExpress === value ? "border-primary-500 bg-primary-50" : "border-neutral-200 hover:border-neutral-300"
+                      }`}
+                    >
+                      <span className="flex items-center gap-2 text-sm font-semibold text-neutral-800">
+                        <input
+                          type="radio"
+                          name="delivery_speed"
+                          checked={isExpress === value}
+                          onChange={() => setIsExpress(value)}
+                          className="accent-primary-600"
+                        />
+                        {label}
+                      </span>
+                      <span className="text-xs text-neutral-500 mt-0.5 ml-6">{desc}</span>
+                    </label>
+                  ))}
+                </div>
+              </Field>
 
               <Field label="Order Notes (optional)">
                 <textarea
@@ -417,24 +588,48 @@ export default function Checkout() {
                   </div>
                 )}
                 <div className="flex justify-between text-neutral-600">
-                  <span>Shipping{form.state ? ` (${form.state})` : ""}</span>
-                  {shippingFee > 0 ? (
-                    <span>₦{shippingFee.toLocaleString()}</span>
+                  <span>
+                    Shipping
+                    {deliveryQuote ? ` (Zone ${deliveryQuote.zone}, ${deliveryQuote.deliveryClass})` : ""}
+                  </span>
+                  {isQuoting ? (
+                    <span className="text-neutral-400">Calculating…</span>
+                  ) : deliveryQuote ? (
+                    shippingFee > 0 ? (
+                      <span>₦{shippingFee.toLocaleString()}</span>
+                    ) : (
+                      <span className="text-emerald-600 font-medium">Free</span>
+                    )
+                  ) : quoteError ? (
+                    <span className="text-red-500">Unavailable</span>
                   ) : (
-                    <span className="text-emerald-600 font-medium">
-                      {form.state ? "Free" : "Select a state"}
-                    </span>
+                    <span className="text-neutral-400">Select address</span>
                   )}
                 </div>
+                {quoteError && !isQuoting && (
+                  <p className="text-xs text-red-500">{quoteError}</p>
+                )}
+                {deliveryQuote && (
+                  <div className="pl-3 space-y-1 text-[11px] text-neutral-400">
+                    <div className="flex justify-between"><span>Base fee</span><span>₦{deliveryQuote.baseFee.toLocaleString()}</span></div>
+                    <div className="flex justify-between"><span>Distance ({deliveryQuote.distanceKm.toFixed(1)} km)</span><span>₦{deliveryQuote.distanceFee.toLocaleString()}</span></div>
+                    {deliveryQuote.specialHandlingFee > 0 && (
+                      <div className="flex justify-between"><span>Special handling</span><span>₦{deliveryQuote.specialHandlingFee.toLocaleString()}</span></div>
+                    )}
+                    {deliveryQuote.expressFee > 0 && (
+                      <div className="flex justify-between"><span>Express</span><span>₦{deliveryQuote.expressFee.toLocaleString()}</span></div>
+                    )}
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-neutral-800 text-base pt-1 border-t border-neutral-100">
                   <span>Total</span>
-                  <span className="text-primary-600">₦{total.toLocaleString()}</span>
+                  <span className="text-secondary-700">₦{total.toLocaleString()}</span>
                 </div>
               </div>
 
               <button
                 type="submit"
-                disabled={isLoading || initializingPayment}
+                disabled={isLoading || initializingPayment || !canPlaceOrder}
                 className="mt-5 w-full flex items-center justify-center gap-2 rounded-xl bg-primary-600 py-3 text-sm font-bold text-white hover:bg-primary-700 disabled:opacity-60 transition-colors shadow-sm"
               >
                 {isLoading || initializingPayment ? (
@@ -442,7 +637,17 @@ export default function Checkout() {
                 ) : (
                   <Lock size={14} />
                 )}
-                {isLoading ? "Placing Order…" : initializingPayment ? "Redirecting to Paystack…" : "Place Order"}
+                {isLoading
+                  ? "Placing Order…"
+                  : initializingPayment
+                  ? "Redirecting to Paystack…"
+                  : !destination
+                  ? "Select delivery address to continue"
+                  : isQuoting
+                  ? "Calculating delivery…"
+                  : !deliveryQuote
+                  ? "Delivery unavailable"
+                  : "Place Order"}
               </button>
 
               <p className="mt-3 text-[10px] text-neutral-400 text-center">

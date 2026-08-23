@@ -8,28 +8,28 @@ const CONTACT_INFO = [
     color: "#07b6b0",
     bg: "#07b6b015",
     label: "Our Location",
-    lines: ["Okorodafe Roundabout, Market Rd", "Oteri 333105, Delta, Nigeria"],
+    lines: ["4, Bolaji Ojomu, off Kukoyi", "Alapere, Ketu, Lagos"],
   },
   {
     icon: Phone,
     color: "#8b5cf6",
     bg: "#8b5cf615",
     label: "Phone",
-    lines: ["+234 703 878 4788", "Mon–Fri, 9am–6pm"],
+    lines: ["+234 706 531 6098", "+234 812 708 9505", "+234 705 163 7304"],
   },
   {
     icon: Mail,
     color: "#f59e0b",
     bg: "#f59e0b15",
     label: "Email",
-    lines: ["support@MyFlexShopgadgets.com", "We reply within 24 hours"],
+    lines: ["myflexishops@gmail.com", "We reply within 24 hours"],
   },
   {
     icon: Clock,
     color: "#ef4444",
     bg: "#ef444415",
     label: "Business Hours",
-    lines: ["Mon – Fri: 9:00 AM – 6:00 PM", "Sat: 10:00 AM – 4:00 PM"],
+    lines: ["Mon – Sat: 9:00 AM – 4:00 PM"],
   },
 ];
 
