@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import {
   useGetOrderByNumberQuery, useVerifyPaystackPaymentMutation, useInitializePaystackPaymentMutation,
+  usePayOrderWithWalletMutation,
 } from "../api/storefrontApi";
 import { useSelector } from "react-redux";
 import { selectCurrentCustomer } from "../store/authSlice";
@@ -14,6 +15,7 @@ const PAYMENT_LABELS = {
   paystack: "Card (Paystack)",
   bank_transfer: "Bank Transfer",
   pay_on_delivery: "Pay on Delivery",
+  wallet: "Wallet",
 };
 
 function CopyButton({ text }) {
@@ -50,6 +52,7 @@ export default function OrderConfirmation() {
 
   const [verifyPaystackPayment, { isLoading: verifying }] = useVerifyPaystackPaymentMutation();
   const [initializePaystackPayment, { isLoading: retrying }] = useInitializePaystackPaymentMutation();
+  const [payOrderWithWallet, { isLoading: payingWallet }] = usePayOrderWithWalletMutation();
   const [verifyError, setVerifyError] = useState("");
   const [retryError, setRetryError] = useState("");
   const hasVerified = useRef(false);
@@ -82,6 +85,17 @@ export default function OrderConfirmation() {
       window.location.href = res.authorization_url;
     } catch (err) {
       setRetryError(err?.data?.message ?? "Could not start payment. Please try again.");
+    }
+  };
+
+  const handleWalletPayment = async () => {
+    if (!order) return;
+    setRetryError("");
+    try {
+      await payOrderWithWallet({ order_number: order.order_number }).unwrap();
+      refetch();
+    } catch (err) {
+      setRetryError(err?.data?.message ?? "Wallet payment failed. Please try again.");
     }
   };
 
@@ -271,6 +285,29 @@ export default function OrderConfirmation() {
               >
                 {retrying ? "Redirecting…" : "Complete Payment"}
               </button>
+            </div>
+          )}
+
+          {order.payment_method === "wallet" && order.payment_status !== "paid" && (
+            <div className="mt-3 space-y-2">
+              <div className="rounded-lg bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800">
+                This order is awaiting wallet payment.
+              </div>
+              {retryError && <p className="text-xs text-red-500">{retryError}</p>}
+              {customer ? (
+                <button
+                  type="button"
+                  onClick={handleWalletPayment}
+                  disabled={payingWallet}
+                  className="w-full rounded-xl bg-primary-600 py-2.5 text-xs font-bold text-white hover:bg-primary-700 disabled:opacity-60 transition-colors"
+                >
+                  {payingWallet ? "Processing…" : "Pay from Wallet"}
+                </button>
+              ) : (
+                <p className="text-xs text-neutral-500">
+                  <Link to="/sign-in" className="text-primary-600 underline">Sign in</Link> to pay from your wallet.
+                </p>
+              )}
             </div>
           )}
         </div>

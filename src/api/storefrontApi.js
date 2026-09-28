@@ -13,7 +13,16 @@ export const storefrontApi = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Product", "Cms", "Categories", "Customer", "ShippingFee", "Kyc"],
+  tagTypes: [
+    "Product",
+    "Cms",
+    "Categories",
+    "Customer",
+    "ShippingFee",
+    "Kyc",
+    "Orders",
+    "Wallet",
+  ],
   endpoints: (builder) => ({
     // ── Products ──────────────────────────────────────────────────────────────
     getPublicProducts: builder.query({
@@ -159,14 +168,49 @@ export const storefrontApi = createApi({
       }),
     }),
 
-    // ── Shipping fees ───────────────────────────────────────────────────────
-    getShippingFees: builder.query({
-      query: () => "/storefront/shipping-fees",
-      providesTags: ["ShippingFee"],
+    // ── Wallet ───────────────────────────────────────────────────────────────
+    getWallet: builder.query({
+      query: () => "/storefront/wallet",
+      providesTags: ["Wallet"],
     }),
-    quoteDelivery: builder.mutation({
+    getWalletTransactions: builder.query({
+      query: (params) => ({ url: "/storefront/wallet/transactions", params }),
+      providesTags: ["Wallet"],
+    }),
+    initializeWalletTopup: builder.mutation({
       query: (body) => ({
-        url: "/storefront/public/delivery/quote",
+        url: "/storefront/wallet/topup",
+        method: "POST",
+        body,
+      }),
+    }),
+    verifyWalletTopup: builder.mutation({
+      query: (reference) => ({
+        url: `/storefront/wallet/topup/verify/${reference}`,
+        method: "GET",
+      }),
+      invalidatesTags: ["Wallet"],
+    }),
+    retryDedicatedAccount: builder.mutation({
+      query: () => ({
+        url: "/storefront/wallet/dedicated-account/retry",
+        method: "POST",
+      }),
+      invalidatesTags: ["Wallet"],
+    }),
+    payOrderWithWallet: builder.mutation({
+      query: (body) => ({
+        url: "/storefront/payments/wallet/pay",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: ["Wallet", "Orders"],
+    }),
+
+    // ── Delivery (priced live by MDS) ───────────────────────────────────────
+    getDeliveryOptions: builder.mutation({
+      query: (body) => ({
+        url: "/storefront/public/delivery/options",
         method: "POST",
         body,
       }),
@@ -214,10 +258,15 @@ export const {
   useGetMyOrdersQuery,
   useGetOrderByNumberQuery,
   useValidateDiscountCodeMutation,
-  useGetShippingFeesQuery,
-  useQuoteDeliveryMutation,
+  useGetDeliveryOptionsMutation,
   useInitializePaystackPaymentMutation,
   useVerifyPaystackPaymentMutation,
+  useGetWalletQuery,
+  useGetWalletTransactionsQuery,
+  useInitializeWalletTopupMutation,
+  useVerifyWalletTopupMutation,
+  useRetryDedicatedAccountMutation,
+  usePayOrderWithWalletMutation,
   useGetSwapModelsQuery,
   useGetSwapTargetProductsQuery,
   useGetSwapOptionsQuery,

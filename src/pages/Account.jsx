@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import {
   User,
@@ -23,6 +23,9 @@ import {
   UploadCloud,
   FileText,
   RefreshCw,
+  // Wallet,
+  ArrowDownCircle,
+  ArrowUpCircle,
 } from "lucide-react";
 import {
   useGetMeQuery,
@@ -33,6 +36,11 @@ import {
   useGetMyKycQuery,
   useSubmitKycMutation,
   useResubmitKycMutation,
+  useGetWalletQuery,
+  useGetWalletTransactionsQuery,
+  useInitializeWalletTopupMutation,
+  useVerifyWalletTopupMutation,
+  useRetryDedicatedAccountMutation,
 } from "../api/storefrontApi";
 import { selectCurrentCustomer, logout } from "../store/authSlice";
 import { NIGERIA_STATES } from "../constants/nigeriaStates";
@@ -40,18 +48,40 @@ import { NIGERIA_STATES } from "../constants/nigeriaStates";
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 const STATUS_CONFIG = {
-  pending:    { label: "Pending",    color: "bg-amber-100 text-amber-700",   icon: Clock },
-  processing: { label: "Processing", color: "bg-blue-100 text-blue-700",     icon: RotateCcw },
-  shipped:    { label: "Shipped",    color: "bg-purple-100 text-purple-700", icon: Truck },
-  delivered:  { label: "Delivered",  color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
-  cancelled:  { label: "Cancelled",  color: "bg-red-100 text-red-700",       icon: XCircle },
+  pending: {
+    label: "Pending",
+    color: "bg-amber-100 text-amber-700",
+    icon: Clock,
+  },
+  processing: {
+    label: "Processing",
+    color: "bg-blue-100 text-blue-700",
+    icon: RotateCcw,
+  },
+  shipped: {
+    label: "Shipped",
+    color: "bg-purple-100 text-purple-700",
+    icon: Truck,
+  },
+  delivered: {
+    label: "Delivered",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: CheckCircle,
+  },
+  cancelled: {
+    label: "Cancelled",
+    color: "bg-red-100 text-red-700",
+    icon: XCircle,
+  },
 };
 
 function StatusBadge({ status }) {
   const cfg = STATUS_CONFIG[status] ?? STATUS_CONFIG.pending;
   const Icon = cfg.icon;
   return (
-    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.color}`}>
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${cfg.color}`}
+    >
       <Icon size={11} />
       {cfg.label}
     </span>
@@ -60,12 +90,18 @@ function StatusBadge({ status }) {
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString("en-NG", {
-    day: "numeric", month: "short", year: "numeric",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
 function initials(first, last) {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase();
+}
+
+function formatNaira(n) {
+  return `₦${Number(n ?? 0).toLocaleString("en-NG", { minimumFractionDigits: 2 })}`;
 }
 
 // ── Feedback banner ────────────────────────────────────────────────────────────
@@ -74,10 +110,21 @@ function Feedback({ type, msg, onClose }) {
   if (!msg) return null;
   const isError = type === "error";
   return (
-    <div className={`flex items-start gap-2 rounded-xl p-3 text-sm mb-4 ${isError ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}>
-      {isError ? <AlertCircle size={15} className="mt-0.5 shrink-0" /> : <Check size={15} className="mt-0.5 shrink-0" />}
+    <div
+      className={`flex items-start gap-2 rounded-xl p-3 text-sm mb-4 ${isError ? "bg-red-50 text-red-700" : "bg-emerald-50 text-emerald-700"}`}
+    >
+      {isError ? (
+        <AlertCircle size={15} className="mt-0.5 shrink-0" />
+      ) : (
+        <Check size={15} className="mt-0.5 shrink-0" />
+      )}
       <span className="flex-1">{msg}</span>
-      <button onClick={onClose} className="shrink-0 opacity-60 hover:opacity-100">✕</button>
+      <button
+        onClick={onClose}
+        className="shrink-0 opacity-60 hover:opacity-100"
+      >
+        ✕
+      </button>
     </div>
   );
 }
@@ -87,7 +134,9 @@ function Feedback({ type, msg, onClose }) {
 function OverviewTab({ customer, orders }) {
   const recentOrders = (orders ?? []).slice(0, 3);
   const totalOrders = orders?.length ?? 0;
-  const pendingOrders = orders?.filter((o) => o.status === "pending" || o.status === "processing").length ?? 0;
+  const pendingOrders =
+    orders?.filter((o) => o.status === "pending" || o.status === "processing")
+      .length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -113,11 +162,15 @@ function OverviewTab({ customer, orders }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
           <p className="text-2xl font-bold text-neutral-800">{totalOrders}</p>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Total Orders</p>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">
+            Total Orders
+          </p>
         </div>
         <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
           <p className="text-2xl font-bold text-amber-600">{pendingOrders}</p>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Active Orders</p>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">
+            Active Orders
+          </p>
         </div>
       </div>
 
@@ -125,7 +178,9 @@ function OverviewTab({ customer, orders }) {
       {recentOrders.length > 0 && (
         <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-            <p className="text-sm font-semibold text-neutral-700">Recent Orders</p>
+            <p className="text-sm font-semibold text-neutral-700">
+              Recent Orders
+            </p>
           </div>
           <div className="divide-y divide-neutral-100">
             {recentOrders.map((order) => (
@@ -135,13 +190,22 @@ function OverviewTab({ customer, orders }) {
                 className="flex items-center justify-between px-4 py-3 hover:bg-neutral-50 transition-colors group"
               >
                 <div className="min-w-0">
-                  <p className="text-xs font-bold text-neutral-800 font-mono">{order.order_number}</p>
-                  <p className="text-[10px] text-neutral-400 mt-0.5">{formatDate(order.createdAt)}</p>
+                  <p className="text-xs font-bold text-neutral-800 font-mono">
+                    {order.order_number}
+                  </p>
+                  <p className="text-[10px] text-neutral-400 mt-0.5">
+                    {formatDate(order.createdAt)}
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
                   <StatusBadge status={order.status} />
-                  <p className="text-sm font-bold text-neutral-700">₦{Number(order.total).toLocaleString()}</p>
-                  <ChevronRight size={13} className="text-neutral-300 group-hover:text-primary-500 transition-colors" />
+                  <p className="text-sm font-bold text-neutral-700">
+                    ₦{Number(order.total).toLocaleString()}
+                  </p>
+                  <ChevronRight
+                    size={13}
+                    className="text-neutral-300 group-hover:text-primary-500 transition-colors"
+                  />
                 </div>
               </Link>
             ))}
@@ -159,7 +223,10 @@ function OrdersTab({ orders, isLoading }) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 rounded-2xl bg-neutral-100 animate-pulse" />
+          <div
+            key={i}
+            className="h-20 rounded-2xl bg-neutral-100 animate-pulse"
+          />
         ))}
       </div>
     );
@@ -172,7 +239,9 @@ function OrdersTab({ orders, isLoading }) {
           <ShoppingBag size={24} className="text-primary-300" />
         </div>
         <p className="text-neutral-500 font-medium">No orders yet</p>
-        <p className="text-sm text-neutral-400 mt-1">Your order history will appear here.</p>
+        <p className="text-sm text-neutral-400 mt-1">
+          Your order history will appear here.
+        </p>
         <Link
           to="/products"
           className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-primary-700 transition-colors"
@@ -214,14 +283,21 @@ function OrdersTab({ orders, isLoading }) {
                   </p>
                 </div>
               </div>
-              <p className="hidden sm:block text-xs text-neutral-500 whitespace-nowrap">{formatDate(order.createdAt)}</p>
+              <p className="hidden sm:block text-xs text-neutral-500 whitespace-nowrap">
+                {formatDate(order.createdAt)}
+              </p>
               <p className="hidden sm:block text-xs text-neutral-500 text-center">
                 {itemCount} item{itemCount !== 1 ? "s" : ""}
               </p>
               <StatusBadge status={order.status} />
               <div className="flex items-center justify-between sm:justify-end gap-2">
-                <p className="text-sm font-bold text-neutral-700">₦{Number(order.total).toLocaleString()}</p>
-                <ChevronRight size={13} className="text-neutral-300 group-hover:text-primary-500 transition-colors" />
+                <p className="text-sm font-bold text-neutral-700">
+                  ₦{Number(order.total).toLocaleString()}
+                </p>
+                <ChevronRight
+                  size={13}
+                  className="text-neutral-300 group-hover:text-primary-500 transition-colors"
+                />
               </div>
             </Link>
           );
@@ -235,7 +311,9 @@ function OrdersTab({ orders, isLoading }) {
 
 function ProfileTab({ customer }) {
   const [form, setForm] = useState({
-    first_name: "", last_name: "", phone_number: "",
+    first_name: "",
+    last_name: "",
+    phone_number: "",
   });
   const [feedback, setFeedback] = useState(null);
   const [updateProfile, { isLoading }] = useUpdateProfileMutation();
@@ -257,25 +335,38 @@ function ProfileTab({ customer }) {
       await updateProfile(form).unwrap();
       setFeedback({ type: "success", msg: "Profile updated successfully." });
     } catch (err) {
-      setFeedback({ type: "error", msg: err?.data?.message ?? "Failed to update profile." });
+      setFeedback({
+        type: "error",
+        msg: err?.data?.message ?? "Failed to update profile.",
+      });
     }
   };
 
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-      <h3 className="text-sm font-bold text-neutral-800 mb-4">Personal Information</h3>
-      <Feedback {...(feedback ?? {})} msg={feedback?.msg} onClose={() => setFeedback(null)} />
+      <h3 className="text-sm font-bold text-neutral-800 mb-4">
+        Personal Information
+      </h3>
+      <Feedback
+        {...(feedback ?? {})}
+        msg={feedback?.msg}
+        onClose={() => setFeedback(null)}
+      />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {[
             { label: "First Name", key: "first_name", required: true },
-            { label: "Last Name",  key: "last_name",  required: true },
+            { label: "Last Name", key: "last_name", required: true },
           ].map(({ label, key, required }) => (
             <div key={key}>
-              <label className="block text-xs font-semibold text-neutral-600 mb-1">{label}</label>
+              <label className="block text-xs font-semibold text-neutral-600 mb-1">
+                {label}
+              </label>
               <input
                 value={form[key]}
-                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, [key]: e.target.value }))
+                }
                 required={required}
                 className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition"
               />
@@ -283,19 +374,27 @@ function ProfileTab({ customer }) {
           ))}
         </div>
         <div>
-          <label className="block text-xs font-semibold text-neutral-600 mb-1">Email Address</label>
+          <label className="block text-xs font-semibold text-neutral-600 mb-1">
+            Email Address
+          </label>
           <input
             value={customer?.email ?? ""}
             disabled
             className="w-full rounded-xl border border-neutral-100 bg-neutral-50 px-3 py-2.5 text-sm text-neutral-400 cursor-not-allowed"
           />
-          <p className="text-[10px] text-neutral-400 mt-1">Email cannot be changed.</p>
+          <p className="text-[10px] text-neutral-400 mt-1">
+            Email cannot be changed.
+          </p>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-neutral-600 mb-1">Phone Number</label>
+          <label className="block text-xs font-semibold text-neutral-600 mb-1">
+            Phone Number
+          </label>
           <input
             value={form.phone_number}
-            onChange={(e) => setForm((f) => ({ ...f, phone_number: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, phone_number: e.target.value }))
+            }
             placeholder="e.g. 08012345678"
             className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition"
           />
@@ -339,30 +438,50 @@ function AddressTab({ customer }) {
         phone_number: customer?.phone_number,
         ...form,
       }).unwrap();
-      setFeedback({ type: "success", msg: "Address saved. It will pre-fill on checkout." });
+      setFeedback({
+        type: "success",
+        msg: "Address saved. It will pre-fill on checkout.",
+      });
     } catch (err) {
-      setFeedback({ type: "error", msg: err?.data?.message ?? "Failed to save address." });
+      setFeedback({
+        type: "error",
+        msg: err?.data?.message ?? "Failed to save address.",
+      });
     }
   };
 
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-      <h3 className="text-sm font-bold text-neutral-800 mb-1">Default Shipping Address</h3>
-      <p className="text-xs text-neutral-400 mb-4">This address will pre-fill when you checkout.</p>
-      <Feedback {...(feedback ?? {})} msg={feedback?.msg} onClose={() => setFeedback(null)} />
+      <h3 className="text-sm font-bold text-neutral-800 mb-1">
+        Default Shipping Address
+      </h3>
+      <p className="text-xs text-neutral-400 mb-4">
+        This address will pre-fill when you checkout.
+      </p>
+      <Feedback
+        {...(feedback ?? {})}
+        msg={feedback?.msg}
+        onClose={() => setFeedback(null)}
+      />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-semibold text-neutral-600 mb-1">Street Address</label>
+          <label className="block text-xs font-semibold text-neutral-600 mb-1">
+            Street Address
+          </label>
           <input
             value={form.address}
-            onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+            onChange={(e) =>
+              setForm((f) => ({ ...f, address: e.target.value }))
+            }
             placeholder="e.g. 12 Allen Avenue, Ikeja"
             className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition"
           />
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-semibold text-neutral-600 mb-1">City / Town</label>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">
+              City / Town
+            </label>
             <input
               value={form.city}
               onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
@@ -371,15 +490,21 @@ function AddressTab({ customer }) {
             />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-neutral-600 mb-1">State</label>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">
+              State
+            </label>
             <select
               value={form.state}
-              onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, state: e.target.value }))
+              }
               className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition bg-white"
             >
               <option value="">Select state…</option>
               {NIGERIA_STATES.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </div>
@@ -399,7 +524,11 @@ function AddressTab({ customer }) {
 // ── Tab: Security ─────────────────────────────────────────────────────────────
 
 function SecurityTab() {
-  const [form, setForm] = useState({ current_password: "", new_password: "", confirm_password: "" });
+  const [form, setForm] = useState({
+    current_password: "",
+    new_password: "",
+    confirm_password: "",
+  });
   const [feedback, setFeedback] = useState(null);
   const [updatePassword, { isLoading }] = useUpdatePasswordMutation();
 
@@ -410,36 +539,55 @@ function SecurityTab() {
       return setFeedback({ type: "error", msg: "New passwords do not match." });
     }
     if (form.new_password.length < 6) {
-      return setFeedback({ type: "error", msg: "New password must be at least 6 characters." });
+      return setFeedback({
+        type: "error",
+        msg: "New password must be at least 6 characters.",
+      });
     }
     try {
       const res = await updatePassword({
         current_password: form.current_password,
         new_password: form.new_password,
       }).unwrap();
-      setFeedback({ type: "success", msg: res.message ?? "Password updated successfully." });
+      setFeedback({
+        type: "success",
+        msg: res.message ?? "Password updated successfully.",
+      });
       setForm({ current_password: "", new_password: "", confirm_password: "" });
     } catch (err) {
-      setFeedback({ type: "error", msg: err?.data?.message ?? "Failed to update password." });
+      setFeedback({
+        type: "error",
+        msg: err?.data?.message ?? "Failed to update password.",
+      });
     }
   };
 
   return (
     <div className="bg-white rounded-2xl border border-neutral-200 p-5">
-      <h3 className="text-sm font-bold text-neutral-800 mb-4">Change Password</h3>
-      <Feedback {...(feedback ?? {})} msg={feedback?.msg} onClose={() => setFeedback(null)} />
+      <h3 className="text-sm font-bold text-neutral-800 mb-4">
+        Change Password
+      </h3>
+      <Feedback
+        {...(feedback ?? {})}
+        msg={feedback?.msg}
+        onClose={() => setFeedback(null)}
+      />
       <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
         {[
           { label: "Current Password", key: "current_password" },
-          { label: "New Password",     key: "new_password" },
+          { label: "New Password", key: "new_password" },
           { label: "Confirm New Password", key: "confirm_password" },
         ].map(({ label, key }) => (
           <div key={key}>
-            <label className="block text-xs font-semibold text-neutral-600 mb-1">{label}</label>
+            <label className="block text-xs font-semibold text-neutral-600 mb-1">
+              {label}
+            </label>
             <input
               type="password"
               value={form[key]}
-              onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, [key]: e.target.value }))
+              }
               required
               className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition"
             />
@@ -482,14 +630,18 @@ function ReferralsTab() {
     return (
       <div className="space-y-3">
         {[1, 2].map((i) => (
-          <div key={i} className="h-24 rounded-2xl bg-neutral-100 animate-pulse" />
+          <div
+            key={i}
+            className="h-24 rounded-2xl bg-neutral-100 animate-pulse"
+          />
         ))}
       </div>
     );
   }
 
   const availableCount =
-    data?.reward_codes?.filter((c) => c.active && c.used_count < c.max_uses).length ?? 0;
+    data?.reward_codes?.filter((c) => c.active && c.used_count < c.max_uses)
+      .length ?? 0;
 
   return (
     <div className="space-y-6">
@@ -500,10 +652,13 @@ function ReferralsTab() {
           <p className="font-bold text-sm">Refer a friend, earn 5%</p>
         </div>
         <p className="text-primary-100 text-xs leading-relaxed">
-          Share your link. When someone you referred spends over ₦50,000, you get a 5% discount code.
+          Share your link. When someone you referred spends over ₦50,000, you
+          get a 5% discount code.
         </p>
         <div className="mt-4 flex items-center gap-2 rounded-xl bg-white/15 px-3 py-2.5">
-          <span className="flex-1 text-sm font-mono font-semibold truncate">{referralLink}</span>
+          <span className="flex-1 text-sm font-mono font-semibold truncate">
+            {referralLink}
+          </span>
           <button
             onClick={copyLink}
             className="shrink-0 flex items-center gap-1.5 rounded-lg bg-white/20 hover:bg-white/30 px-2.5 py-1.5 text-xs font-semibold transition-colors"
@@ -517,19 +672,29 @@ function ReferralsTab() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
         <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
-          <p className="text-2xl font-bold text-neutral-800">{data?.referrals?.length ?? 0}</p>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Friends Referred</p>
+          <p className="text-2xl font-bold text-neutral-800">
+            {data?.referrals?.length ?? 0}
+          </p>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">
+            Friends Referred
+          </p>
         </div>
         <div className="bg-white rounded-2xl border border-neutral-200 p-4 text-center">
-          <p className="text-2xl font-bold text-emerald-600">{availableCount}</p>
-          <p className="text-xs text-neutral-400 mt-0.5 font-medium">Rewards Available</p>
+          <p className="text-2xl font-bold text-emerald-600">
+            {availableCount}
+          </p>
+          <p className="text-xs text-neutral-400 mt-0.5 font-medium">
+            Rewards Available
+          </p>
         </div>
       </div>
 
       {/* Reward codes */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-neutral-100">
-          <p className="text-sm font-semibold text-neutral-700">Your Reward Codes</p>
+          <p className="text-sm font-semibold text-neutral-700">
+            Your Reward Codes
+          </p>
         </div>
         {!data?.reward_codes?.length ? (
           <div className="py-10 text-center">
@@ -541,9 +706,14 @@ function ReferralsTab() {
             {data.reward_codes.map((c) => {
               const redeemed = c.used_count >= c.max_uses;
               return (
-                <div key={c.code} className="flex items-center justify-between px-4 py-3">
+                <div
+                  key={c.code}
+                  className="flex items-center justify-between px-4 py-3"
+                >
                   <div>
-                    <p className="text-sm font-bold font-mono text-neutral-800">{c.code}</p>
+                    <p className="text-sm font-bold font-mono text-neutral-800">
+                      {c.code}
+                    </p>
                     <p className="text-[11px] text-neutral-400 mt-0.5">
                       {c.value}% off
                       {c.expires_at && ` · expires ${formatDate(c.expires_at)}`}
@@ -551,7 +721,9 @@ function ReferralsTab() {
                   </div>
                   <span
                     className={`text-xs font-semibold rounded-full px-2.5 py-1 ${
-                      redeemed ? "bg-neutral-100 text-neutral-400" : "bg-emerald-100 text-emerald-700"
+                      redeemed
+                        ? "bg-neutral-100 text-neutral-400"
+                        : "bg-emerald-100 text-emerald-700"
                     }`}
                   >
                     {redeemed ? "Redeemed" : "Available"}
@@ -566,21 +738,328 @@ function ReferralsTab() {
       {/* Referred friends */}
       <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
         <div className="px-4 py-3 border-b border-neutral-100">
-          <p className="text-sm font-semibold text-neutral-700">Friends You've Referred</p>
+          <p className="text-sm font-semibold text-neutral-700">
+            Friends You've Referred
+          </p>
         </div>
         {!data?.referrals?.length ? (
           <div className="py-10 text-center">
             <Users size={22} className="text-neutral-200 mx-auto mb-2" />
-            <p className="text-sm text-neutral-400">No referrals yet — share your link above.</p>
+            <p className="text-sm text-neutral-400">
+              No referrals yet — share your link above.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-neutral-100">
             {data.referrals.map((r, i) => (
-              <div key={i} className="flex items-center justify-between px-4 py-3">
-                <p className="text-sm font-medium text-neutral-700">{r.first_name} {r.last_name}</p>
-                <p className="text-xs text-neutral-400">Joined {formatDate(r.joined_at)}</p>
+              <div
+                key={i}
+                className="flex items-center justify-between px-4 py-3"
+              >
+                <p className="text-sm font-medium text-neutral-700">
+                  {r.first_name} {r.last_name}
+                </p>
+                <p className="text-xs text-neutral-400">
+                  Joined {formatDate(r.joined_at)}
+                </p>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Tab: Wallet ───────────────────────────────────────────────────────────────
+
+const WALLET_SOURCE_LABELS = {
+  dva_funding: "Bank transfer",
+  card_funding: "Card top-up",
+  order_payment: "Order payment",
+  refund: "Refund",
+  reversal: "Reversal",
+  adjustment: "Adjustment",
+};
+
+function WalletTab({ topupRef, onTopupHandled }) {
+  const { data, isLoading, error, refetch } = useGetWalletQuery();
+  const { data: txns, isLoading: txnsLoading } = useGetWalletTransactionsQuery({
+    limit: 25,
+  });
+  const [initTopup, { isLoading: startingTopup }] =
+    useInitializeWalletTopupMutation();
+  const [verifyTopup, { isLoading: verifyingTopup }] =
+    useVerifyWalletTopupMutation();
+  const [retryAccount, { isLoading: retrying }] =
+    useRetryDedicatedAccountMutation();
+
+  const [amount, setAmount] = useState("");
+  const [feedback, setFeedback] = useState(null);
+
+  // Returning from Paystack after a top-up (?topup=<ref>) — confirm it so the
+  // balance updates immediately instead of waiting on the webhook.
+  useEffect(() => {
+    if (!topupRef) return;
+    verifyTopup(topupRef)
+      .unwrap()
+      .then((res) => {
+        if (res.credited)
+          setFeedback({ type: "success", msg: "Wallet funded successfully." });
+        else if (res.status === "success")
+          setFeedback({
+            type: "success",
+            msg: "Payment received — your balance is up to date.",
+          });
+        else
+          setFeedback({ type: "error", msg: "That top-up was not completed." });
+        refetch();
+      })
+      .catch((err) =>
+        setFeedback({
+          type: "error",
+          msg: err?.data?.message ?? "Could not confirm your top-up.",
+        }),
+      )
+      .finally(() => onTopupHandled?.());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topupRef]);
+
+  const handleTopup = async (e) => {
+    e.preventDefault();
+    setFeedback(null);
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value < 100) {
+      return setFeedback({
+        type: "error",
+        msg: "Enter an amount of at least ₦100.",
+      });
+    }
+    try {
+      const res = await initTopup({ amount: value }).unwrap();
+      window.location.href = res.authorization_url;
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        msg: err?.data?.message ?? "Could not start the top-up.",
+      });
+    }
+  };
+
+  const handleRetryAccount = async () => {
+    setFeedback(null);
+    try {
+      await retryAccount().unwrap();
+      refetch();
+    } catch (err) {
+      setFeedback({
+        type: "error",
+        msg:
+          err?.data?.message ??
+          "Could not set up the account. Try again later.",
+      });
+    }
+  };
+
+  if (isLoading) {
+    return <div className="h-40 rounded-2xl bg-neutral-100 animate-pulse" />;
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-between gap-3 rounded-xl bg-red-50 text-red-700 p-3 text-sm">
+        <span className="flex items-center gap-2">
+          <AlertCircle size={15} className="shrink-0" />
+          Couldn't load your wallet.
+        </span>
+        <button
+          onClick={() => refetch()}
+          className="shrink-0 flex items-center gap-1.5 rounded-lg bg-red-100 hover:bg-red-200 px-2.5 py-1.5 text-xs font-semibold transition-colors"
+        >
+          <RefreshCw size={12} /> Retry
+        </button>
+      </div>
+    );
+  }
+
+  const account = data?.dedicated_account;
+  const transactions = txns?.transactions ?? [];
+
+  return (
+    <div className="space-y-6">
+      {verifyingTopup && (
+        <div className="flex items-center gap-2 rounded-xl bg-blue-50 text-blue-700 p-3 text-sm">
+          <RefreshCw size={15} className="animate-spin shrink-0" /> Confirming
+          your top-up…
+        </div>
+      )}
+      <Feedback
+        {...(feedback ?? {})}
+        msg={feedback?.msg}
+        onClose={() => setFeedback(null)}
+      />
+
+      {/* Balance */}
+      <div className="bg-gradient-to-br from-primary-600 to-primary-500 rounded-2xl p-5 text-white">
+        <div className="flex items-center gap-2 mb-1">
+          <Wallet size={16} />
+          <p className="font-bold text-sm">Wallet Balance</p>
+        </div>
+        <p className="text-3xl font-extrabold mt-2">
+          {formatNaira(data?.wallet?.balance)}
+        </p>
+        {data?.wallet?.status === "frozen" && (
+          <p className="text-primary-100 text-xs mt-1">
+            This wallet is currently frozen. Contact support.
+          </p>
+        )}
+      </div>
+
+      {/* Fund by bank transfer (dedicated account) */}
+      <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <h3 className="text-sm font-bold text-neutral-800 mb-1">
+          Fund by bank transfer
+        </h3>
+        {account?.status === "active" ? (
+          <>
+            <p className="text-xs text-neutral-400 mb-3">
+              Transfer to this account any time — funds reflect in your wallet
+              within minutes.
+            </p>
+            <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-4 space-y-1.5 text-sm">
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Bank</span>
+                <span className="font-semibold text-neutral-800">
+                  {account.bank_name}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Account number</span>
+                <span className="font-semibold text-neutral-800 font-mono">
+                  {account.account_number}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Account name</span>
+                <span className="font-semibold text-neutral-800">
+                  {account.account_name}
+                </span>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-800 flex items-start justify-between gap-3">
+            <span>
+              {account?.status === "pending"
+                ? "Your dedicated funding account is being set up. Check back shortly, or use card top-up below."
+                : "A dedicated funding account isn't available yet. You can still top up by card below."}
+            </span>
+            <button
+              onClick={handleRetryAccount}
+              disabled={retrying}
+              className="shrink-0 rounded-lg bg-amber-100 hover:bg-amber-200 px-2.5 py-1.5 font-semibold transition-colors disabled:opacity-50"
+            >
+              {retrying ? "Checking…" : "Retry"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Top up by card */}
+      <div className="bg-white rounded-2xl border border-neutral-200 p-5">
+        <h3 className="text-sm font-bold text-neutral-800 mb-3">
+          Top up by card
+        </h3>
+        <form onSubmit={handleTopup} className="flex gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
+              ₦
+            </span>
+            <input
+              type="number"
+              min="100"
+              step="100"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="Amount"
+              className="w-full rounded-xl border border-neutral-200 pl-7 pr-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={startingTopup}
+            className="rounded-xl bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50"
+          >
+            {startingTopup ? "Redirecting…" : "Add Funds"}
+          </button>
+        </form>
+      </div>
+
+      {/* Transactions */}
+      <div className="bg-white rounded-2xl border border-neutral-200 overflow-hidden">
+        <div className="px-4 py-3 border-b border-neutral-100">
+          <p className="text-sm font-semibold text-neutral-700">
+            Recent Activity
+          </p>
+        </div>
+        {txnsLoading ? (
+          <div className="p-4 space-y-2">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-10 rounded-lg bg-neutral-100 animate-pulse"
+              />
+            ))}
+          </div>
+        ) : !transactions.length ? (
+          <div className="py-10 text-center">
+            <Wallet size={22} className="text-neutral-200 mx-auto mb-2" />
+            <p className="text-sm text-neutral-400">No wallet activity yet.</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-neutral-100">
+            {transactions.map((t) => {
+              const isCredit = t.direction === "credit";
+              return (
+                <div
+                  key={t.id}
+                  className="flex items-center justify-between px-4 py-3"
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    {isCredit ? (
+                      <ArrowDownCircle
+                        size={18}
+                        className="text-emerald-500 shrink-0"
+                      />
+                    ) : (
+                      <ArrowUpCircle
+                        size={18}
+                        className="text-neutral-400 shrink-0"
+                      />
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-neutral-800 truncate">
+                        {WALLET_SOURCE_LABELS[t.source] ?? t.source}
+                      </p>
+                      <p className="text-[10px] text-neutral-400">
+                        {formatDate(t.createdAt)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p
+                      className={`text-sm font-bold ${isCredit ? "text-emerald-600" : "text-neutral-700"}`}
+                    >
+                      {isCredit ? "+" : "−"}
+                      {formatNaira(t.amount)}
+                    </p>
+                    <p className="text-[10px] text-neutral-400">
+                      Bal {formatNaira(t.balance_after)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
@@ -598,9 +1077,21 @@ const KYC_DOC_TYPES = [
 ];
 
 const KYC_STATUS_CONFIG = {
-  pending: { label: "Under Review", color: "bg-amber-100 text-amber-700", icon: Clock },
-  approved: { label: "Verified", color: "bg-emerald-100 text-emerald-700", icon: CheckCircle },
-  rejected: { label: "Rejected", color: "bg-red-100 text-red-700", icon: XCircle },
+  pending: {
+    label: "Under Review",
+    color: "bg-amber-100 text-amber-700",
+    icon: Clock,
+  },
+  approved: {
+    label: "Verified",
+    color: "bg-emerald-100 text-emerald-700",
+    icon: CheckCircle,
+  },
+  rejected: {
+    label: "Rejected",
+    color: "bg-red-100 text-red-700",
+    icon: XCircle,
+  },
 };
 
 const KYC_MAX_FILE_BYTES = 200 * 1024; // 200 KB
@@ -613,7 +1104,10 @@ function KycUploadForm({ mode, onSubmit, isLoading, setFeedback }) {
   const handleFileChange = (e) => {
     const selected = e.target.files?.[0] ?? null;
     if (selected && selected.size > KYC_MAX_FILE_BYTES) {
-      setFeedback({ type: "error", msg: "File is too large. Maximum size is 200KB." });
+      setFeedback({
+        type: "error",
+        msg: "File is too large. Maximum size is 200KB.",
+      });
       setFile(null);
       e.target.value = "";
       return;
@@ -625,9 +1119,16 @@ function KycUploadForm({ mode, onSubmit, isLoading, setFeedback }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setFeedback(null);
-    if (!file) return setFeedback({ type: "error", msg: "Please choose a file to upload." });
+    if (!file)
+      return setFeedback({
+        type: "error",
+        msg: "Please choose a file to upload.",
+      });
     if (file.size > KYC_MAX_FILE_BYTES) {
-      return setFeedback({ type: "error", msg: "File is too large. Maximum size is 200KB." });
+      return setFeedback({
+        type: "error",
+        msg: "File is too large. Maximum size is 200KB.",
+      });
     }
 
     const formData = new FormData();
@@ -640,20 +1141,25 @@ function KycUploadForm({ mode, onSubmit, isLoading, setFeedback }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-neutral-600 mb-1">Document Type</label>
+        <label className="block text-xs font-semibold text-neutral-600 mb-1">
+          Document Type
+        </label>
         <select
           value={docType}
           onChange={(e) => setDocType(e.target.value)}
           className="w-full rounded-xl border border-neutral-200 px-3 py-2.5 text-sm text-neutral-800 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-primary-400 transition bg-white"
         >
           {KYC_DOC_TYPES.map((d) => (
-            <option key={d.value} value={d.value}>{d.label}</option>
+            <option key={d.value} value={d.value}>
+              {d.label}
+            </option>
           ))}
         </select>
       </div>
       <div>
         <label className="block text-xs font-semibold text-neutral-600 mb-1">
-          ID Number <span className="font-normal text-neutral-400">(optional)</span>
+          ID Number{" "}
+          <span className="font-normal text-neutral-400">(optional)</span>
         </label>
         <input
           type="text"
@@ -664,11 +1170,15 @@ function KycUploadForm({ mode, onSubmit, isLoading, setFeedback }) {
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-neutral-600 mb-1">Upload Document</label>
+        <label className="block text-xs font-semibold text-neutral-600 mb-1">
+          Upload Document
+        </label>
         <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-neutral-200 hover:border-primary-300 transition-colors px-4 py-8 cursor-pointer text-center">
           <UploadCloud size={22} className="text-neutral-300" />
           <span className="text-sm text-neutral-500">
-            {file ? file.name : "Click to choose a JPEG, PNG, WEBP or PDF (max 200KB)"}
+            {file
+              ? file.name
+              : "Click to choose a JPEG, PNG, WEBP or PDF (max 200KB)"}
           </span>
           <input
             type="file"
@@ -683,7 +1193,11 @@ function KycUploadForm({ mode, onSubmit, isLoading, setFeedback }) {
         disabled={isLoading}
         className="rounded-xl bg-primary-600 hover:bg-primary-700 text-white px-5 py-2.5 text-sm font-semibold transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Submitting…" : mode === "resubmit" ? "Resubmit for Review" : "Submit for Verification"}
+        {isLoading
+          ? "Submitting…"
+          : mode === "resubmit"
+            ? "Resubmit for Review"
+            : "Submit for Verification"}
       </button>
     </form>
   );
@@ -705,9 +1219,15 @@ function VerificationTab() {
     setFeedback(null);
     try {
       await submitKyc(formData).unwrap();
-      setFeedback({ type: "success", msg: "KYC submitted successfully. We'll review it shortly." });
+      setFeedback({
+        type: "success",
+        msg: "KYC submitted successfully. We'll review it shortly.",
+      });
     } catch (err) {
-      setFeedback({ type: "error", msg: err?.data?.message ?? "Failed to submit KYC." });
+      setFeedback({
+        type: "error",
+        msg: err?.data?.message ?? "Failed to submit KYC.",
+      });
     }
   };
 
@@ -717,7 +1237,10 @@ function VerificationTab() {
       await resubmitKyc(formData).unwrap();
       setFeedback({ type: "success", msg: "KYC resubmitted for review." });
     } catch (err) {
-      setFeedback({ type: "error", msg: err?.data?.message ?? "Failed to resubmit KYC." });
+      setFeedback({
+        type: "error",
+        msg: err?.data?.message ?? "Failed to resubmit KYC.",
+      });
     }
   };
 
@@ -733,13 +1256,19 @@ function VerificationTab() {
     <div className="bg-white rounded-2xl border border-neutral-200 p-5">
       <div className="flex items-center gap-2 mb-1">
         <ShieldCheck size={16} className="text-primary-500" />
-        <h3 className="text-sm font-bold text-neutral-800">Identity Verification</h3>
+        <h3 className="text-sm font-bold text-neutral-800">
+          Identity Verification
+        </h3>
       </div>
       <p className="text-xs text-neutral-400 mb-4">
         Verify your identity to unlock part payments and higher order limits.
       </p>
 
-      <Feedback {...(feedback ?? {})} msg={feedback?.msg} onClose={() => setFeedback(null)} />
+      <Feedback
+        {...(feedback ?? {})}
+        msg={feedback?.msg}
+        onClose={() => setFeedback(null)}
+      />
 
       {loadFailed && (
         <div className="flex items-center justify-between gap-3 rounded-xl bg-red-50 text-red-700 p-3 text-sm mb-4">
@@ -769,10 +1298,13 @@ function VerificationTab() {
       {kyc && (
         <div className="space-y-4">
           {(() => {
-            const cfg = KYC_STATUS_CONFIG[kyc.status] ?? KYC_STATUS_CONFIG.pending;
+            const cfg =
+              KYC_STATUS_CONFIG[kyc.status] ?? KYC_STATUS_CONFIG.pending;
             const Icon = cfg.icon;
             return (
-              <div className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold ${cfg.color}`}>
+              <div
+                className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold ${cfg.color}`}
+              >
                 <Icon size={15} />
                 {cfg.label}
               </div>
@@ -780,16 +1312,31 @@ function VerificationTab() {
           })()}
 
           <div className="text-sm text-neutral-600 space-y-1">
-            <p><span className="font-semibold text-neutral-700">Document:</span> {KYC_DOC_TYPES.find((d) => d.value === kyc.docType)?.label ?? kyc.docType ?? "N/A"}</p>
+            <p>
+              <span className="font-semibold text-neutral-700">Document:</span>{" "}
+              {KYC_DOC_TYPES.find((d) => d.value === kyc.docType)?.label ??
+                kyc.docType ??
+                "N/A"}
+            </p>
             {kyc.idNumber && (
-              <p><span className="font-semibold text-neutral-700">ID Number:</span> {kyc.idNumber}</p>
+              <p>
+                <span className="font-semibold text-neutral-700">
+                  ID Number:
+                </span>{" "}
+                {kyc.idNumber}
+              </p>
             )}
-            <p><span className="font-semibold text-neutral-700">Submitted:</span> {formatDate(kyc.createdAt)}</p>
+            <p>
+              <span className="font-semibold text-neutral-700">Submitted:</span>{" "}
+              {formatDate(kyc.createdAt)}
+            </p>
           </div>
 
           {kyc.fileDataUrl && (
             <div>
-              <p className="text-xs font-semibold text-neutral-600 mb-1.5">Uploaded Document</p>
+              <p className="text-xs font-semibold text-neutral-600 mb-1.5">
+                Uploaded Document
+              </p>
               {kyc.mimeType === "application/pdf" ? (
                 <a
                   href={kyc.fileDataUrl}
@@ -801,7 +1348,11 @@ function VerificationTab() {
                   View PDF Document
                 </a>
               ) : (
-                <a href={kyc.fileDataUrl} target="_blank" rel="noopener noreferrer">
+                <a
+                  href={kyc.fileDataUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   <img
                     src={kyc.fileDataUrl}
                     alt="Uploaded KYC document"
@@ -815,7 +1366,10 @@ function VerificationTab() {
           {kyc.status === "rejected" && kyc.rejectionReason && (
             <div className="flex items-start gap-2 rounded-xl bg-red-50 text-red-700 p-3 text-sm">
               <AlertCircle size={15} className="mt-0.5 shrink-0" />
-              <span><span className="font-semibold">Reason for rejection:</span> {kyc.rejectionReason}</span>
+              <span>
+                <span className="font-semibold">Reason for rejection:</span>{" "}
+                {kyc.rejectionReason}
+              </span>
             </div>
           )}
 
@@ -836,25 +1390,47 @@ function VerificationTab() {
 // ── Main ───────────────────────────────────────────────────────────────────────
 
 const TABS = [
-  { id: "overview",  label: "Overview",  icon: User },
-  { id: "orders",    label: "My Orders", icon: ShoppingBag },
+  { id: "overview", label: "Overview", icon: User },
+  { id: "orders", label: "My Orders", icon: ShoppingBag },
+  // { id: "wallet",    label: "Wallet",    icon: Wallet },
   { id: "referrals", label: "Referrals", icon: Gift },
-  { id: "profile",   label: "Profile",   icon: User },
-  { id: "address",   label: "Address",   icon: MapPin },
+  { id: "profile", label: "Profile", icon: User },
+  { id: "address", label: "Address", icon: MapPin },
   { id: "verification", label: "Verification", icon: ShieldCheck },
-  { id: "security",  label: "Security",  icon: Lock },
+  { id: "security", label: "Security", icon: Lock },
 ];
 
 export default function Account() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const authCustomer = useSelector(selectCurrentCustomer);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const validTab = TABS.some((t) => t.id === searchParams.get("tab"));
+  const [activeTab, setActiveTab] = useState(
+    validTab ? searchParams.get("tab") : "overview",
+  );
+  const topupRef = searchParams.get("topup");
+
+  // Clears the ?topup=… param once the Wallet tab has consumed it, so a
+  // refresh doesn't re-run verification.
+  const handleTopupHandled = () => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("topup");
+        return next;
+      },
+      { replace: true },
+    );
+  };
 
   const { data: customer } = useGetMeQuery(undefined, { skip: !authCustomer });
-  const { data: ordersData, isLoading: ordersLoading } = useGetMyOrdersQuery(undefined, {
-    skip: !authCustomer,
-  });
+  const { data: ordersData, isLoading: ordersLoading } = useGetMyOrdersQuery(
+    undefined,
+    {
+      skip: !authCustomer,
+    },
+  );
 
   // Redirect if not logged in
   useEffect(() => {
@@ -874,7 +1450,9 @@ export default function Account() {
     <div className="mx-auto max-w-6xl px-4 py-8">
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 text-xs text-neutral-400 mb-6">
-        <Link to="/" className="hover:text-primary-600 transition-colors">Home</Link>
+        <Link to="/" className="hover:text-primary-600 transition-colors">
+          Home
+        </Link>
         <ChevronRight size={11} />
         <span className="text-neutral-600">My Account</span>
       </div>
@@ -886,12 +1464,18 @@ export default function Account() {
             {/* Avatar header */}
             <div className="bg-gradient-to-br from-primary-600 to-primary-500 px-4 py-4 text-white">
               <div className="h-10 w-10 rounded-full bg-white/25 flex items-center justify-center font-bold text-sm mb-2">
-                {initials(customer?.first_name ?? authCustomer.first_name, customer?.last_name ?? authCustomer.last_name)}
+                {initials(
+                  customer?.first_name ?? authCustomer.first_name,
+                  customer?.last_name ?? authCustomer.last_name,
+                )}
               </div>
               <p className="text-sm font-semibold leading-tight truncate">
-                {customer?.first_name ?? authCustomer.first_name} {customer?.last_name ?? authCustomer.last_name}
+                {customer?.first_name ?? authCustomer.first_name}{" "}
+                {customer?.last_name ?? authCustomer.last_name}
               </p>
-              <p className="text-[11px] text-primary-200 truncate">{authCustomer.email}</p>
+              <p className="text-[11px] text-primary-200 truncate">
+                {authCustomer.email}
+              </p>
             </div>
 
             {/* Nav items */}
@@ -930,6 +1514,12 @@ export default function Account() {
           )}
           {activeTab === "orders" && (
             <OrdersTab orders={orders} isLoading={ordersLoading} />
+          )}
+          {activeTab === "wallet" && (
+            <WalletTab
+              topupRef={topupRef}
+              onTopupHandled={handleTopupHandled}
+            />
           )}
           {activeTab === "referrals" && <ReferralsTab />}
           {activeTab === "profile" && (
